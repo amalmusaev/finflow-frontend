@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Wallet, ArrowLeftRight, Settings as SettingsIcon, PanelLeftClose, RefreshCw } from 'lucide-react';
+import { Wallet, ArrowLeftRight, Settings as SettingsIcon, PanelLeftClose, RefreshCw, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { api } from '../api';
 
@@ -29,6 +29,7 @@ export function Layout() {
   const navItems = [
     { name: 'Операции', path: '/', icon: ArrowLeftRight },
     { name: 'Счета', path: '/accounts', icon: Wallet },
+    { name: 'ИИ-Ассистент', path: '/chat', icon: Sparkles },
     { name: 'Настройки', path: '/settings', icon: SettingsIcon },
   ];
 
