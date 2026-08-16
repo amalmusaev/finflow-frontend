@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "ui-sans-serif", "system-ui", "sans-serif", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: "JetBrains Mono", "ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace";
+  
+  --color-mono-50: var(--mono-50);
+  --color-mono-100: var(--mono-100);
+  --color-mono-200: var(--mono-200);
+  --color-mono-300: var(--mono-300);
+  --color-mono-400: var(--mono-400);
+  --color-mono-500: var(--mono-500);
+  --color-mono-600: var(--mono-600);
+  --color-mono-700: var(--mono-700);
+  --color-mono-800: var(--mono-800);
+  --color-mono-900: var(--mono-900);
+  --color-mono-950: var(--mono-950);
+}
+
+:root {
+  --mono-50: #fafafa;
+  --mono-100: #f4f4f5;
+  --mono-200: #e4e4e7;
+  --mono-300: #d4d4d8;
+  --mono-400: #a1a1aa;
+  --mono-500: #71717a;
+  --mono-600: #52525b;
+  --mono-700: #3f3f46;
+  --mono-800: #27272a;
+  --mono-900: #18181b;
+  --mono-950: #09090b;
+}
+
+.dark {
+  --mono-50: #09090b;
+  --mono-100: #18181b;
+  --mono-200: #27272a;
+  --mono-300: #3f3f46;
+  --mono-400: #52525b;
+  --mono-500: #71717a;
+  --mono-600: #a1a1aa;
+  --mono-700: #d4d4d8;
+  --mono-800: #e4e4e7;
+  --mono-900: #f4f4f5;
+  --mono-950: #fafafa;
+}
+
+@layer base {
+  body {
+    @apply bg-mono-50 text-mono-900 font-sans antialiased h-screen overflow-hidden;
+  }
+  
+  #root {
+    @apply h-full;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-mono-200 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-mono-300;
+  }
+}
