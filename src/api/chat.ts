@@ -2,11 +2,20 @@ import { apiRequest } from './client';
 
 export type MessageRole = 'user' | 'assistant' | 'system';
 
+export interface ChatImageAttachment {
+  id: string;
+  url: string; // Base64 Data URL or remote URL
+  name: string;
+  size?: number;
+  type?: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: MessageRole;
   content: string;
   timestamp: string;
+  images?: ChatImageAttachment[];
   isStreaming?: boolean;
 }
 
@@ -22,6 +31,7 @@ export interface ChatRequest {
   messages: Array<{
     role: MessageRole;
     content: string;
+    images?: string[];
   }>;
   context?: {
     total_balance?: string | number;

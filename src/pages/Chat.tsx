@@ -1,23 +1,30 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { SendHorizontal, Sparkles, Trash2 } from 'lucide-react';
+import { SendHorizontal, Sparkles, Trash2, ImagePlus, X, UploadCloud, AlertCircle } from 'lucide-react';
 import { ChatMessageItem } from '../components/chat/ChatMessageItem';
 import { ChatSidebar, ToggleSidebarButton } from '../components/chat/ChatSidebar';
 import { generateMockAiResponse } from '../lib/mockChat';
 import { api } from '../api';
 import type { Account, Category, Operation } from '../api/types';
-import type { ChatMessage, ChatSession } from '../api/chat';
+import type { ChatMessage, ChatSession, ChatImageAttachment } from '../api/chat';
 import { cn } from '../lib/utils';
 import { accounts as mockAccounts, categories as mockCategories, transactions as mockTransactions } from '../lib/mockData';
 
 const SESSIONS_STORAGE_KEY = 'finflow_chat_sessions_v2';
 const LEGACY_STORAGE_KEY = 'finflow_chat_history_v1';
 const SIDEBAR_STORAGE_KEY = 'finflow_chat_sidebar_open';
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_ATTACHED_FILES = 5;
 
 const PROMPT_SUGGESTIONS = [
   {
     icon: '📊',
     title: 'Анализ расходов',
     prompt: 'Сколько я потратил в этом месяце и на какие категории?',
+  },
+  {
+    icon: '🧾',
+    title: 'Распознать чек',
+    prompt: 'Разбери этот чек, выдели позиции и определи общую сумму',
   },
   {
     icon: '💳',
@@ -28,11 +35,6 @@ const PROMPT_SUGGESTIONS = [
     icon: '🔍',
     title: 'Крупные траты',
     prompt: 'Покажи самые крупные расходы и средний чек',
-  },
-  {
-    icon: '💡',
-    title: 'Советы по бюджету',
-    prompt: 'Дай рекомендации по оптимизации бюджета и сбережениям',
   },
 ];
 
@@ -99,6 +101,9 @@ export function Chat() {
   });
 
   const [input, setInput] = useState('');
+  const [attachedImages, setAttachedImages] = useState<ChatImageAttachment[]>([]);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -106,6 +111,7 @@ export function Chat() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Находим текущую активную сессию
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0] || null;
@@ -181,12 +187,116 @@ export function Chat() {
     }
   }, [input]);
 
+  // Обработка файлов изображений
+  const readFileAsDataUrl = (file: File): Promise<ChatImageAttachment> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        resolve({
+          id: `img-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          url: reader.result as string,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        });
+      };
+      reader.onerror = () => reject(new Error(`Не удалось прочитать файл ${file.name}`));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const processFiles = async (files: FileList | File[]) => {
+    setUploadError(null);
+    const fileArray = Array.from(files);
+    const imageFiles = fileArray.filter((f) => f.type.startsWith('image/'));
+
+    if (imageFiles.length === 0) {
+      setUploadError('Пожалуйста, выберите изображение (PNG, JPG, WEBP, GIF, SVG)');
+      return;
+    }
+
+    if (attachedImages.length + imageFiles.length > MAX_ATTACHED_FILES) {
+      setUploadError(`Максимум ${MAX_ATTACHED_FILES} изображений на одно сообщение`);
+      return;
+    }
+
+    const validFiles: File[] = [];
+    for (const file of imageFiles) {
+      if (file.size > MAX_FILE_SIZE) {
+        setUploadError(`Файл «${file.name}» превышает лимит 10 МБ`);
+        return;
+      }
+      validFiles.push(file);
+    }
+
+    try {
+      const attachments = await Promise.all(validFiles.map(readFileAsDataUrl));
+      setAttachedImages((prev) => [...prev, ...attachments]);
+    } catch (err: any) {
+      setUploadError(err.message || 'Ошибка при загрузке изображения');
+    }
+  };
+
+  const handleRemoveAttachedImage = (id: string) => {
+    setAttachedImages((prev) => prev.filter((img) => img.id !== id));
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processFiles(e.target.files);
+      e.target.value = '';
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const imageFiles: File[] = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.indexOf('image') !== -1) {
+        const file = item.getAsFile();
+        if (file) imageFiles.push(file);
+      }
+    }
+
+    if (imageFiles.length > 0) {
+      e.preventDefault();
+      processFiles(imageFiles);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDraggingOver) setIsDraggingOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDraggingOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
+    }
+  };
+
   // Управление сессиями
   const handleCreateSession = () => {
     const newSession = createNewSessionObject();
     setSessions((prev) => [newSession, ...prev]);
     setActiveSessionId(newSession.id);
     setInput('');
+    setAttachedImages([]);
+    setUploadError(null);
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
@@ -195,6 +305,8 @@ export function Chat() {
   const handleSelectSession = (id: string) => {
     setActiveSessionId(id);
     setInput('');
+    setAttachedImages([]);
+    setUploadError(null);
   };
 
   const handleDeleteSession = (id: string) => {
@@ -229,19 +341,25 @@ export function Chat() {
 
   const handleSendMessage = async (textToSend?: string) => {
     const query = (textToSend || input).trim();
-    if (!query || isGenerating || !activeSession) return;
+    const currentImages = [...attachedImages];
+    const hasImagesToSend = currentImages.length > 0;
+
+    if ((!query && !hasImagesToSend) || isGenerating || !activeSession) return;
+
+    const finalPrompt = query || (hasImagesToSend ? 'Разбери и проанализируй прикрепленный документ/чек' : '');
 
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
       content: query,
+      images: hasImagesToSend ? currentImages : undefined,
       timestamp: new Date().toISOString(),
     };
 
     const isFirstMessage = activeSession.messages.length === 0;
     const newTitle =
       isFirstMessage && (activeSession.title === 'Новый диалог' || !activeSession.title)
-        ? generateTitleFromPrompt(query)
+        ? generateTitleFromPrompt(query || (hasImagesToSend ? 'Анализ чека / фото' : 'Диалог'))
         : activeSession.title;
 
     // Оптимистичное обновление сообщений в текущей сессии
@@ -259,6 +377,9 @@ export function Chat() {
     );
 
     setInput('');
+    setAttachedImages([]);
+    setUploadError(null);
+
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
@@ -267,10 +388,13 @@ export function Chat() {
 
     try {
       // Имитируем генерацию ответа с естественной задержкой
-      const fullResponse = await generateMockAiResponse(query, {
+      const fullResponse = await generateMockAiResponse(finalPrompt, {
         accounts,
         categories,
         operations,
+        hasImages: hasImagesToSend,
+        imagesCount: currentImages.length,
+        imageNames: currentImages.map((img) => img.name),
       });
 
       // Задержка для реалистичности
@@ -324,8 +448,47 @@ export function Chat() {
     }
   };
 
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const canSend = (input.trim().length > 0 || attachedImages.length > 0) && !isGenerating;
+
   return (
-    <div className="flex h-full bg-mono-50 text-mono-900 overflow-hidden relative">
+    <div
+      className="flex h-full bg-mono-50 text-mono-900 overflow-hidden relative"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+        multiple
+        onChange={handleFileInputChange}
+        className="hidden"
+      />
+
+      {/* Drag & Drop Visual Overlay */}
+      {isDraggingOver && (
+        <div className="absolute inset-0 z-40 bg-mono-950/60 backdrop-blur-xs flex items-center justify-center p-6 pointer-events-none">
+          <div className="border-2 border-dashed border-mono-200 bg-mono-900 text-mono-50 rounded-2xl p-8 max-w-md w-full flex flex-col items-center gap-3 shadow-2xl animate-in zoom-in-95 duration-150 text-center">
+            <div className="w-12 h-12 rounded-xl bg-mono-800 flex items-center justify-center text-mono-100">
+              <UploadCloud className="w-6 h-6 animate-bounce" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">Перетащите изображения сюда</p>
+              <p className="text-xs text-mono-400 font-mono mt-1">Чек, квитанция, выписка или скриншот (до 10 МБ)</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0">
         {/* Top actions toolbar */}
@@ -356,7 +519,7 @@ export function Chat() {
                 Чем я могу помочь сегодня?
               </h2>
               <p className="text-sm text-mono-500 max-w-md mb-8 leading-relaxed">
-                Задавайте вопросы о ваших тратах, балансе счетов, динамике накоплений или просите структурированные отчеты.
+                Задавайте вопросы о ваших расходах, загружайте фотографии чеков и квитанций для распознавания, или запрашивайте финансовые сводки.
               </p>
 
               {/* Quick Prompt Cards Grid */}
@@ -427,38 +590,103 @@ export function Chat() {
               </div>
             )}
 
-            <div className="relative flex items-end bg-mono-100 border border-mono-200 focus-within:border-mono-400 focus-within:ring-1 focus-within:ring-mono-400 rounded-xl p-2 transition-all">
-              <textarea
-                ref={textareaRef}
-                rows={1}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Задайте вопрос о ваших расходах, счетах или бюджете..."
-                className="w-full bg-transparent border-0 focus:outline-none resize-none px-2 py-1.5 text-sm text-mono-900 placeholder:text-mono-400 max-h-40 font-sans"
-                disabled={isGenerating}
-              />
-
-              <div className="flex items-center gap-1.5 ml-2 flex-shrink-0">
+            {/* Upload Error Banner */}
+            {uploadError && (
+              <div className="mb-2 p-2 px-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-between animate-in fade-in duration-150">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500" />
+                  <span>{uploadError}</span>
+                </div>
                 <button
-                  onClick={() => handleSendMessage()}
-                  disabled={!input.trim() || isGenerating}
-                  className={cn(
-                    "p-2 rounded-lg transition-all flex items-center justify-center",
-                    input.trim() && !isGenerating
-                      ? "bg-mono-900 text-mono-50 hover:bg-mono-800 shadow-xs"
-                      : "bg-mono-200 text-mono-400 cursor-not-allowed"
-                  )}
-                  title="Отправить сообщение (Enter)"
+                  onClick={() => setUploadError(null)}
+                  className="text-rose-400 hover:text-rose-600 p-0.5"
                 >
-                  <SendHorizontal className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
+              </div>
+            )}
+
+            {/* Input Box Container */}
+            <div className="relative flex flex-col bg-mono-100 border border-mono-200 focus-within:border-mono-400 focus-within:ring-1 focus-within:ring-mono-400 rounded-xl p-2 transition-all">
+              {/* Attached Images Preview Row */}
+              {attachedImages.length > 0 && (
+                <div className="flex items-center gap-2 p-2 mb-2 bg-mono-200/60 rounded-lg overflow-x-auto border border-mono-300/40">
+                  {attachedImages.map((img) => (
+                    <div key={img.id} className="relative group/thumb flex-shrink-0">
+                      <img
+                        src={img.url}
+                        alt={img.name}
+                        className="w-14 h-14 object-cover rounded-md border border-mono-300 shadow-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveAttachedImage(img.id)}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-mono-900 hover:bg-rose-600 text-mono-50 rounded-full flex items-center justify-center shadow-xs transition-colors"
+                        title="Удалить изображение"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                      <div className="absolute bottom-0 inset-x-0 bg-mono-950/70 text-mono-100 text-[9px] font-mono px-1 py-0.5 truncate rounded-b-md text-center">
+                        {formatFileSize(img.size)}
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex flex-col justify-center pl-1 text-[11px] text-mono-500 font-mono">
+                    <span>{attachedImages.length} из {MAX_ATTACHED_FILES} прикреплено</span>
+                    <span className="text-[10px] text-mono-400">Нажмите «Отправить» для анализа</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-end gap-1.5">
+                {/* Upload Image Button */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isGenerating || attachedImages.length >= MAX_ATTACHED_FILES}
+                  className="p-2 rounded-lg text-mono-500 hover:text-mono-900 hover:bg-mono-200/80 transition-colors disabled:opacity-40 flex-shrink-0"
+                  title="Прикрепить изображение чека, квитанции или скриншота (или вставьте через Ctrl+V)"
+                >
+                  <ImagePlus className="w-4 h-4" />
+                </button>
+
+                <textarea
+                  ref={textareaRef}
+                  rows={1}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onPaste={handlePaste}
+                  placeholder={
+                    attachedImages.length > 0
+                      ? "Добавьте комментарий или нажмите Enter для отправки..."
+                      : "Задайте вопрос, прикрепите чек или вставьте скриншот (Ctrl+V)..."
+                  }
+                  className="w-full bg-transparent border-0 focus:outline-none resize-none px-1 py-1.5 text-sm text-mono-900 placeholder:text-mono-400 max-h-40 font-sans"
+                  disabled={isGenerating}
+                />
+
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => handleSendMessage()}
+                    disabled={!canSend}
+                    className={cn(
+                      "p-2 rounded-lg transition-all flex items-center justify-center",
+                      canSend
+                        ? "bg-mono-900 text-mono-50 hover:bg-mono-800 shadow-xs"
+                        : "bg-mono-200 text-mono-400 cursor-not-allowed"
+                    )}
+                    title="Отправить сообщение (Enter)"
+                  >
+                    <SendHorizontal className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
 
             <div className="flex items-center justify-between mt-2 px-1 text-[11px] text-mono-400 font-mono">
-              <span>Enter — отправить, Shift + Enter — новая строка</span>
-              <span>Finflow AI v1.0</span>
+              <span>Enter — отправить, Ctrl+V — вставка скриншота</span>
+              <span>Finflow AI v1.1 • Vision OCR</span>
             </div>
           </div>
         </div>
