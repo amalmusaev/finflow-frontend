@@ -684,9 +684,8 @@ export function Chat() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between mt-2 px-1 text-[11px] text-mono-400 font-mono">
+            <div className="mt-2 px-1 text-[11px] text-mono-400 font-mono">
               <span>Enter — отправить, Ctrl+V — вставка скриншота</span>
-              <span>Finflow AI v1.1 • Vision OCR</span>
             </div>
           </div>
         </div>

@@ -1,30 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Wallet, ArrowLeftRight, Settings as SettingsIcon, PanelLeftClose, RefreshCw, Sparkles } from 'lucide-react';
+import { Wallet, ArrowLeftRight, Settings as SettingsIcon, PanelLeftClose, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { api } from '../api';
+import { isMockMode } from '../api';
 
 export function Layout() {
   const location = useLocation();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
-  const [backendVersion, setBackendVersion] = useState<string>('');
-
-  const checkStatus = useCallback(async () => {
-    try {
-      const res = await api.health.checkHealth();
-      setBackendStatus('online');
-      setBackendVersion(res.version || '0.1.0');
-    } catch {
-      setBackendStatus('offline');
-    }
-  }, []);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const saved = localStorage.getItem('finflow_sidebar_collapsed');
+    return saved !== null ? saved === 'true' : true;
+  });
 
   useEffect(() => {
-    checkStatus();
-    const interval = setInterval(checkStatus, 30000);
-    return () => clearInterval(interval);
-  }, [checkStatus]);
+    localStorage.setItem('finflow_sidebar_collapsed', String(isCollapsed));
+  }, [isCollapsed]);
 
   const navItems = [
     { name: 'Операции', path: '/', icon: ArrowLeftRight },
@@ -74,41 +63,11 @@ export function Layout() {
           })}
         </nav>
         
-        {/* Backend Status & Version */}
-        <div className={cn(
-          "p-4 border-t border-mono-200 text-xs flex flex-col gap-2 transition-all duration-300",
-          isCollapsed && "items-center"
-        )}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2" title={backendStatus === 'online' ? `API онлайн (v${backendVersion})` : backendStatus === 'offline' ? 'API недоступен' : 'Проверка API...'}>
-              <span className={cn(
-                "w-2 h-2 rounded-full flex-shrink-0 transition-colors",
-                backendStatus === 'online' && "bg-emerald-500",
-                backendStatus === 'offline' && "bg-rose-500",
-                backendStatus === 'checking' && "bg-amber-400 animate-pulse"
-              )} />
-              {!isCollapsed && (
-                <span className="text-mono-500 font-mono text-[11px]">
-                  {backendStatus === 'online' ? `API v${backendVersion}` : backendStatus === 'offline' ? 'API Офлайн' : 'Проверка...'}
-                </span>
-              )}
-            </div>
-            {!isCollapsed && backendStatus === 'offline' && (
-              <button 
-                onClick={checkStatus} 
-                className="text-mono-400 hover:text-mono-700 transition-colors p-1"
-                title="Повторить подключение"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-              </button>
-            )}
+        {isMockMode && !isCollapsed && (
+          <div className="p-4 px-6 text-mono-400 font-mono text-xs select-none">
+            Mock Mode
           </div>
-          {!isCollapsed && (
-            <div className="text-mono-400 font-mono text-[10px]">
-              FinFlow v1.0.0
-            </div>
-          )}
-        </div>
+        )}
       </aside>
       <main className="flex-1 overflow-auto bg-mono-50">
         <Outlet />

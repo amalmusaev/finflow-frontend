@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Filter, Plus, X, Trash2, ChevronDown, Loader2, AlertCircle, RefreshCw, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { Search, Filter, Plus, X, Trash2, ChevronDown, Loader2, AlertCircle, RefreshCw, ArrowDownRight, ArrowUpRight, Calendar, RotateCcw } from 'lucide-react';
 import { api } from '../api';
 import type { Operation, Account, Category, OperationType } from '../api';
 
@@ -21,10 +21,14 @@ export function Transactions() {
     type: 'all' | OperationType;
     accountId: string;
     categoryId: string;
+    startDate: string;
+    endDate: string;
   }>({
     type: 'all',
     accountId: 'all',
     categoryId: 'all',
+    startDate: '',
+    endDate: '',
   });
 
   // Modal & Form State
@@ -78,7 +82,9 @@ export function Transactions() {
       const matchesType = filters.type === 'all' || op.type === filters.type;
       const matchesAccount = filters.accountId === 'all' || op.account_id === filters.accountId;
       const matchesCategory = filters.categoryId === 'all' || op.category_id === filters.categoryId;
-      return matchesSearch && matchesType && matchesAccount && matchesCategory;
+      const matchesStartDate = !filters.startDate || op.date >= filters.startDate;
+      const matchesEndDate = !filters.endDate || op.date <= filters.endDate;
+      return matchesSearch && matchesType && matchesAccount && matchesCategory && matchesStartDate && matchesEndDate;
     });
   }, [operations, search, filters]);
 
@@ -95,6 +101,46 @@ export function Transactions() {
     categories.forEach(c => map.set(c.id, c));
     return map;
   }, [categories]);
+
+  const handleDatePreset = (preset: 'all' | 'today' | '7days' | '30days' | 'month') => {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+
+    if (preset === 'all') {
+      setFilters(prev => ({ ...prev, startDate: '', endDate: '' }));
+    } else if (preset === 'today') {
+      setFilters(prev => ({ ...prev, startDate: todayStr, endDate: todayStr }));
+    } else if (preset === '7days') {
+      const d = new Date();
+      d.setDate(d.getDate() - 7);
+      setFilters(prev => ({ ...prev, startDate: d.toISOString().split('T')[0], endDate: todayStr }));
+    } else if (preset === '30days') {
+      const d = new Date();
+      d.setDate(d.getDate() - 30);
+      setFilters(prev => ({ ...prev, startDate: d.toISOString().split('T')[0], endDate: todayStr }));
+    } else if (preset === 'month') {
+      const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+      setFilters(prev => ({ ...prev, startDate: startOfMonth, endDate: todayStr }));
+    }
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      type: 'all',
+      accountId: 'all',
+      categoryId: 'all',
+      startDate: '',
+      endDate: '',
+    });
+    setSearch('');
+  };
+
+  const activeFiltersCount = [
+    filters.type !== 'all',
+    filters.accountId !== 'all',
+    filters.categoryId !== 'all',
+    Boolean(filters.startDate || filters.endDate),
+  ].filter(Boolean).length;
 
   const handleCreate = () => {
     setEditingOperation(null);
@@ -195,29 +241,11 @@ export function Transactions() {
     }
   };
 
-  // Stats calculation
-  const totalIncome = useMemo(() => {
-    return filteredOperations
-      .filter(o => o.type === 'income')
-      .reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
-  }, [filteredOperations]);
-
-  const totalExpense = useMemo(() => {
-    return filteredOperations
-      .filter(o => o.type === 'expense')
-      .reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
-  }, [filteredOperations]);
-
   return (
     <div className="p-8 h-full flex flex-col max-w-7xl mx-auto w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-semibold text-mono-900 tracking-tight mb-1">Операции</h1>
-          <div className="flex items-center gap-4 text-sm text-mono-500">
-            <span>Доходы: <strong className="font-mono text-emerald-600 font-medium">+{totalIncome.toLocaleString('ru-RU', { minimumFractionDigits: 2 })} ₽</strong></span>
-            <span className="text-mono-300">•</span>
-            <span>Расходы: <strong className="font-mono text-mono-900 font-medium">-{totalExpense.toLocaleString('ru-RU', { minimumFractionDigits: 2 })} ₽</strong></span>
-          </div>
+          <h1 className="text-3xl font-semibold text-mono-900 tracking-tight">Операции</h1>
         </div>
         <div className="flex items-center gap-2">
           <button 
@@ -276,61 +304,142 @@ export function Transactions() {
           >
             <Filter className="w-4 h-4" />
             <span>Фильтры</span>
+            {activeFiltersCount > 0 && (
+              <span className={`px-1.5 py-0.2 rounded-full text-[11px] font-mono font-medium ${
+                isFilterOpen ? 'bg-mono-700 text-mono-100' : 'bg-mono-300 text-mono-800'
+              }`}>
+                {activeFiltersCount}
+              </span>
+            )}
           </button>
         </div>
 
         {isFilterOpen && (
-          <div className="p-4 bg-mono-100 border border-mono-200 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-mono-600 mb-1.5 uppercase tracking-wider">Тип операции</label>
-              <div className="relative">
-                <select
-                  value={filters.type}
-                  onChange={e => setFilters(prev => ({ ...prev, type: e.target.value as any }))}
-                  className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
-                >
-                  <option value="all">Все типы</option>
-                  <option value="expense">Расходы</option>
-                  <option value="income">Доходы</option>
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mono-500 pointer-events-none" />
+          <div className="p-4 bg-mono-100 border border-mono-200 rounded-xl space-y-4">
+            {/* Main filter selectors */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-mono-600 mb-1.5 uppercase tracking-wider">Тип операции</label>
+                <div className="relative">
+                  <select
+                    value={filters.type}
+                    onChange={e => setFilters(prev => ({ ...prev, type: e.target.value as any }))}
+                    className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
+                  >
+                    <option value="all">Все типы</option>
+                    <option value="expense">Расходы</option>
+                    <option value="income">Доходы</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mono-500 pointer-events-none" />
+                </div>
               </div>
-            </div>
-            
-            <div>
-              <label className="block text-xs font-semibold text-mono-600 mb-1.5 uppercase tracking-wider">Счет</label>
-              <div className="relative">
-                <select
-                  value={filters.accountId}
-                  onChange={e => setFilters(prev => ({ ...prev, accountId: e.target.value }))}
-                  className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
-                >
-                  <option value="all">Все счета ({accounts.length})</option>
-                  {accounts.map(a => (
-                    <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mono-500 pointer-events-none" />
+              
+              <div>
+                <label className="block text-xs font-semibold text-mono-600 mb-1.5 uppercase tracking-wider">Счет</label>
+                <div className="relative">
+                  <select
+                    value={filters.accountId}
+                    onChange={e => setFilters(prev => ({ ...prev, accountId: e.target.value }))}
+                    className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
+                  >
+                    <option value="all">Все счета ({accounts.length})</option>
+                    {accounts.map(a => (
+                      <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mono-500 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-mono-600 mb-1.5 uppercase tracking-wider">Категория</label>
+                <div className="relative">
+                  <select
+                    value={filters.categoryId}
+                    onChange={e => setFilters(prev => ({ ...prev, categoryId: e.target.value }))}
+                    className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
+                  >
+                    <option value="all">Все категории ({categories.length})</option>
+                    {categories.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.type === 'income' ? 'Доход' : 'Расход'})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mono-500 pointer-events-none" />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-mono-600 mb-1.5 uppercase tracking-wider">Категория</label>
-              <div className="relative">
-                <select
-                  value={filters.categoryId}
-                  onChange={e => setFilters(prev => ({ ...prev, categoryId: e.target.value }))}
-                  className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
-                >
-                  <option value="all">Все категории ({categories.length})</option>
-                  {categories.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.type === 'income' ? 'Доход' : 'Расход'})
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mono-500 pointer-events-none" />
+            {/* Date filter row */}
+            <div className="pt-3 border-t border-mono-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-mono-500 flex-shrink-0" />
+                  <span className="text-xs font-semibold text-mono-600 uppercase tracking-wider">Период:</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={filters.startDate}
+                    onChange={e => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                    className="px-2.5 py-1.5 bg-mono-50 border border-mono-200 rounded-md text-xs font-mono text-mono-900 focus:outline-none focus:border-mono-400"
+                    title="Дата от"
+                  />
+                  <span className="text-mono-400 text-xs">—</span>
+                  <input
+                    type="date"
+                    value={filters.endDate}
+                    onChange={e => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                    className="px-2.5 py-1.5 bg-mono-50 border border-mono-200 rounded-md text-xs font-mono text-mono-900 focus:outline-none focus:border-mono-400"
+                    title="Дата до"
+                  />
+                </div>
+
+                {/* Quick presets */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleDatePreset('today')}
+                    className="px-2 py-1 rounded bg-mono-200/70 hover:bg-mono-200 text-mono-700 text-xs font-medium transition-colors"
+                  >
+                    Сегодня
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDatePreset('7days')}
+                    className="px-2 py-1 rounded bg-mono-200/70 hover:bg-mono-200 text-mono-700 text-xs font-medium transition-colors"
+                  >
+                    7 дней
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDatePreset('30days')}
+                    className="px-2 py-1 rounded bg-mono-200/70 hover:bg-mono-200 text-mono-700 text-xs font-medium transition-colors"
+                  >
+                    30 дней
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDatePreset('month')}
+                    className="px-2 py-1 rounded bg-mono-200/70 hover:bg-mono-200 text-mono-700 text-xs font-medium transition-colors"
+                  >
+                    Этот месяц
+                  </button>
+                </div>
               </div>
+
+              {(activeFiltersCount > 0 || search) && (
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="flex items-center gap-1 text-xs text-mono-500 hover:text-mono-900 transition-colors font-medium self-end md:self-center"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Сбросить все</span>
+                </button>
+              )}
             </div>
           </div>
         )}

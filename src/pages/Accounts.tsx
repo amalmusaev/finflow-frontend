@@ -1,16 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, X, Trash2, Loader2, AlertCircle, RefreshCw, CreditCard, Landmark, Banknote, PiggyBank } from 'lucide-react';
+import { Plus, X, Trash2, Loader2, AlertCircle, RefreshCw, Landmark } from 'lucide-react';
 import { api } from '../api';
 import type { Account, AccountType, Currency } from '../api';
 import { ACCOUNT_TYPE_LABELS, CURRENCY_SYMBOLS, formatCurrency } from '../lib/utils';
-
-
-const TYPE_ICONS: Record<AccountType, React.ComponentType<{ className?: string }>> = {
-  card: CreditCard,
-  bank: Landmark,
-  cash: Banknote,
-  deposit: PiggyBank,
-};
 
 const AVAILABLE_CURRENCIES: Currency[] = ['RUB', 'USD', 'EUR', 'BYN', 'KZT', 'CNY'];
 const AVAILABLE_TYPES: AccountType[] = ['card', 'bank', 'cash', 'deposit'];
@@ -208,7 +200,6 @@ export function Accounts() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {accounts.map(account => {
-            const Icon = TYPE_ICONS[account.type] || Landmark;
             const balanceNum = parseFloat(account.balance) || 0;
 
             return (
@@ -219,14 +210,9 @@ export function Accounts() {
               >
                 <div>
                   <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-lg bg-mono-200/80 text-mono-700 group-hover:bg-mono-200 transition-colors">
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h3 className="text-base font-semibold text-mono-900 leading-snug">{account.name}</h3>
-                        <span className="text-xs text-mono-500">{ACCOUNT_TYPE_LABELS[account.type]}</span>
-                      </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-mono-900 leading-snug">{account.name}</h3>
+                      <span className="text-xs text-mono-500">{ACCOUNT_TYPE_LABELS[account.type]}</span>
                     </div>
                     <span className="text-xs font-mono font-medium text-mono-600 uppercase bg-mono-200 px-2 py-0.5 rounded">
                       {account.currency}
@@ -234,7 +220,7 @@ export function Accounts() {
                   </div>
                 </div>
                 
-                <div className="mt-4 pt-4 border-t border-mono-200/60 flex items-baseline justify-between">
+                <div className="mt-4 flex items-baseline justify-between">
                   <span className="text-xs text-mono-500 font-medium">Баланс</span>
                   <p className="text-xl font-mono font-semibold text-mono-900 tracking-tight">
                     {formatCurrency(balanceNum, account.currency)}
