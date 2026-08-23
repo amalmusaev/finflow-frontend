@@ -501,7 +501,7 @@ export function Transactions() {
                       </td>
                       <td className="py-3 px-4 font-medium text-mono-900 text-sm">
                         <div className="flex items-center gap-2">
-                          <span className={`p-1 rounded-none ${isIncome ? 'bg-emerald-500/10 text-emerald-600' : 'bg-mono-200 text-mono-600'}`}>
+                          <span className={`p-1 rounded-none ${isIncome ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
                             {isIncome ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
                           </span>
                           <span>{op.description}</span>

@@ -6,6 +6,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ChevronRight,
+  ChevronDown,
   Loader2,
   RefreshCw,
   AlertCircle,
@@ -336,22 +337,25 @@ export function Dashboard() {
         {/* Global Filters: Accounts & Date Range */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Account Filter */}
-          <div className="flex items-center gap-2 bg-mono-100 p-1 rounded-none border border-mono-200 shadow-xs">
-            <span className="text-xs font-mono text-mono-400 pl-2 hidden sm:inline">Счет:</span>
-            <select
-              value={selectedAccountId}
-              onChange={(e) => setSelectedAccountId(e.target.value)}
-              className="bg-transparent text-xs font-medium text-mono-900 px-2 py-1.5 focus:outline-none cursor-pointer"
-            >
-              <option value="all" className="bg-mono-100 text-mono-900">
-                Все счета ({accounts.length})
-              </option>
-              {accounts.map((acc) => (
-                <option key={acc.id} value={acc.id} className="bg-mono-100 text-mono-900">
-                  {acc.name} ({formatCurrency(acc.balance, acc.currency)})
+          <div className="flex items-center gap-2 bg-mono-100 px-3.5 py-1.5 rounded-none border border-mono-200 shadow-xs h-9">
+            <span className="text-xs font-mono text-mono-400 hidden sm:inline">Счет:</span>
+            <div className="relative flex items-center">
+              <select
+                value={selectedAccountId}
+                onChange={(e) => setSelectedAccountId(e.target.value)}
+                className="appearance-none bg-transparent text-xs font-medium text-mono-900 pr-5 py-0.5 focus:outline-none cursor-pointer"
+              >
+                <option value="all" className="bg-mono-100 text-mono-900">
+                  Все счета ({accounts.length})
                 </option>
-              ))}
-            </select>
+                {accounts.map((acc) => (
+                  <option key={acc.id} value={acc.id} className="bg-mono-100 text-mono-900">
+                    {acc.name} ({formatCurrency(acc.balance, acc.currency)})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-mono-500 pointer-events-none" />
+            </div>
           </div>
 
           {/* Date Range Picker with Presets & Custom Dates */}

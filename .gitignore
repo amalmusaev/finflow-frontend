@@ -34,3 +34,5 @@ dist-ssr
 # Antigravity
 .agents/
 
+# Information about backend
+backend-info/

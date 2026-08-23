@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, X, Trash2, Loader2, AlertCircle, RefreshCw, Landmark } from 'lucide-react';
+import { Plus, X, Trash2, Loader2, AlertCircle, RefreshCw, Landmark, ChevronDown } from 'lucide-react';
 import { api } from '../api';
 import type { Account, AccountType, Currency } from '../api';
 import { ACCOUNT_TYPE_LABELS, CURRENCY_SYMBOLS, formatCurrency } from '../lib/utils';
@@ -264,32 +264,38 @@ export function Accounts() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-mono-700 mb-1.5">Тип счета</label>
-                  <select
-                    value={formData.type}
-                    onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as AccountType }))}
-                    className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 cursor-pointer"
-                  >
-                    {AVAILABLE_TYPES.map(type => (
-                      <option key={type} value={type}>
-                        {ACCOUNT_TYPE_LABELS[type]}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={formData.type}
+                      onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as AccountType }))}
+                      className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 cursor-pointer text-sm"
+                    >
+                      {AVAILABLE_TYPES.map(type => (
+                        <option key={type} value={type}>
+                          {ACCOUNT_TYPE_LABELS[type]}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mono-500 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-mono-700 mb-1.5">Валюта</label>
-                  <select
-                    value={formData.currency}
-                    onChange={e => setFormData(prev => ({ ...prev, currency: e.target.value as Currency }))}
-                    className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 cursor-pointer"
-                  >
-                    {AVAILABLE_CURRENCIES.map(curr => (
-                      <option key={curr} value={curr}>
-                        {curr} ({CURRENCY_SYMBOLS[curr]})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={formData.currency}
+                      onChange={e => setFormData(prev => ({ ...prev, currency: e.target.value as Currency }))}
+                      className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 cursor-pointer text-sm"
+                    >
+                      {AVAILABLE_CURRENCIES.map(curr => (
+                        <option key={curr} value={curr}>
+                          {curr} ({CURRENCY_SYMBOLS[curr]})
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mono-500 pointer-events-none" />
+                  </div>
                 </div>
               </div>
 

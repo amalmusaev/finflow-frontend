@@ -4,13 +4,10 @@ import { api } from '../api';
 import type { Category, OperationType, Currency } from '../api';
 
 import { CURRENCY_LABELS } from '../lib/utils';
+import { useTheme } from '../context/ThemeContext';
 
 export function Settings() {
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('finflow_theme');
-    if (saved === 'light' || saved === 'dark') return saved;
-    return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-  });
+  const { theme, toggleTheme } = useTheme();
 
   const [defaultCurrency, setDefaultCurrency] = useState<Currency>(() => {
     return (localStorage.getItem('finflow_currency') as Currency) || 'RUB';
@@ -41,15 +38,6 @@ export function Settings() {
   useEffect(() => {
     loadCategories();
   }, [loadCategories]);
-
-  useEffect(() => {
-    localStorage.setItem('finflow_theme', theme);
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
 
   const handleCurrencyChange = (curr: Currency) => {
     setDefaultCurrency(curr);
@@ -86,8 +74,6 @@ export function Settings() {
       setIsSaving(false);
     }
   };
-
-  const toggleTheme = () => setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
 
   const expenseCategories = categories.filter(c => c.type === 'expense');
   const incomeCategories = categories.filter(c => c.type === 'income');

@@ -192,7 +192,7 @@ export function DateRangePicker({ range, onChange, className }: DateRangePickerP
   return (
     <div className={cn("relative inline-block text-left", className)} ref={popoverRef}>
       {/* Quick Pills for desktop */}
-      <div className="flex items-center gap-1.5 bg-mono-100 p-1 rounded-none border border-mono-200 shadow-xs">
+      <div className="flex items-center gap-1.5 bg-mono-100 p-1 rounded-none border border-mono-200 shadow-xs h-9">
         <div className="hidden md:flex items-center gap-1">
           {PRESET_OPTIONS.map((item) => {
             const isActive = range.preset === item.key;
@@ -208,13 +208,14 @@ export function DateRangePicker({ range, onChange, className }: DateRangePickerP
                   }
                 }}
                 className={cn(
-                  "px-3 py-1.5 rounded-none text-xs font-medium transition-all select-none whitespace-nowrap",
+                  "px-3 py-1.5 rounded-none text-xs font-medium transition-all select-none whitespace-nowrap flex items-center gap-1.5",
                   isActive
                     ? "bg-mono-900 text-mono-50 shadow-xs"
                     : "text-mono-600 hover:text-mono-900 hover:bg-mono-200/60"
                 )}
               >
-                {item.label}
+                {item.key === 'custom' && <Calendar className="w-3.5 h-3.5" />}
+                <span>{item.key === 'custom' && range.preset === 'custom' ? formatDisplayRange() : item.label}</span>
               </button>
             );
           })}
@@ -229,19 +230,6 @@ export function DateRangePicker({ range, onChange, className }: DateRangePickerP
           <Calendar className="w-3.5 h-3.5 text-mono-500" />
           <span>{formatDisplayRange()}</span>
           <ChevronDown className={cn("w-3.5 h-3.5 text-mono-400 transition-transform", isOpen && "rotate-180")} />
-        </button>
-
-        {/* Custom Calendar Icon button for desktop to open custom date picker popup */}
-        <button
-          type="button"
-          onClick={() => setIsOpen((prev) => !prev)}
-          className={cn(
-            "p-1.5 rounded-none text-mono-500 hover:text-mono-900 hover:bg-mono-200/70 transition-colors",
-            (isOpen || range.preset === 'custom') && "text-mono-900 bg-mono-200"
-          )}
-          title="Выбрать точные даты"
-        >
-          <Calendar className="w-4 h-4" />
         </button>
       </div>
 
