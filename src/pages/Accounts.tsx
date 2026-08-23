@@ -147,14 +147,14 @@ export function Accounts() {
           <button 
             onClick={loadAccounts}
             disabled={isLoading}
-            className="p-2 border border-mono-200 rounded-md hover:bg-mono-200 text-mono-600 transition-colors disabled:opacity-50"
+            className="p-2 border border-mono-200 rounded-none hover:bg-mono-200 text-mono-600 transition-colors disabled:opacity-50"
             title="Обновить список счетов"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
           <button 
             onClick={handleCreate}
-            className="flex items-center gap-2 bg-mono-900 text-mono-50 px-4 py-2 rounded-md hover:bg-mono-800 transition-colors font-medium text-sm shadow-sm"
+            className="flex items-center gap-2 bg-mono-900 text-mono-50 px-4 py-2 rounded-none hover:bg-mono-800 transition-colors font-medium text-sm "
           >
             <Plus className="w-4 h-4" />
             <span>Добавить счет</span>
@@ -163,7 +163,7 @@ export function Accounts() {
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/30 rounded-lg flex items-center justify-between text-rose-700 dark:text-rose-400">
+        <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/30 rounded-none flex items-center justify-between text-rose-700 dark:text-rose-400">
           <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
             <span className="text-sm font-medium">{error}</span>
@@ -183,7 +183,7 @@ export function Accounts() {
           <p className="text-sm">Загрузка счетов...</p>
         </div>
       ) : accounts.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-mono-500 py-16 border border-dashed border-mono-200 rounded-xl bg-mono-100/50">
+        <div className="flex-1 flex flex-col items-center justify-center text-mono-500 py-16 border border-dashed border-mono-200 rounded-none bg-mono-100/50">
           <Landmark className="w-12 h-12 text-mono-300 mb-3" />
           <h3 className="text-lg font-medium text-mono-800 mb-1">У вас пока нет счетов</h3>
           <p className="text-sm text-mono-500 mb-4 text-center max-w-sm">
@@ -191,7 +191,7 @@ export function Accounts() {
           </p>
           <button 
             onClick={handleCreate}
-            className="flex items-center gap-2 bg-mono-900 text-mono-50 px-4 py-2 rounded-md hover:bg-mono-800 transition-colors text-sm font-medium"
+            className="flex items-center gap-2 bg-mono-900 text-mono-50 px-4 py-2 rounded-none hover:bg-mono-800 transition-colors text-sm font-medium"
           >
             <Plus className="w-4 h-4" />
             <span>Создать счет</span>
@@ -206,7 +206,7 @@ export function Accounts() {
               <div 
                 key={account.id} 
                 onClick={() => handleEdit(account)}
-                className={`bg-mono-100 border border-mono-200 rounded-xl p-6 hover:border-mono-300 hover:shadow-sm transition-all cursor-pointer group flex flex-col justify-between ${!account.is_active ? 'opacity-60' : ''}`}
+                className={`bg-mono-50 border border-mono-200 rounded-none p-6 hover:border-mono-300 hover: transition-all cursor-pointer group flex flex-col justify-between ${!account.is_active ? 'opacity-60' : ''}`}
               >
                 <div>
                   <div className="flex justify-between items-start mb-3">
@@ -234,7 +234,7 @@ export function Accounts() {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-mono-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-mono-50 rounded-xl shadow-xl w-full max-w-md overflow-hidden flex flex-col border border-mono-200">
+          <div className="bg-mono-50 rounded-none shadow-xl w-full max-w-md overflow-hidden flex flex-col border border-mono-200">
             <div className="flex items-center justify-between p-5 border-b border-mono-200">
               <h2 className="text-lg font-semibold text-mono-900">
                 {editingAccount ? 'Редактировать счет' : 'Новый счет'}
@@ -256,7 +256,7 @@ export function Accounts() {
                   maxLength={128}
                   value={formData.name}
                   onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 placeholder:text-mono-400"
+                  className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 placeholder:text-mono-400"
                   placeholder="Например, Tinkoff Black или Наличные"
                 />
               </div>
@@ -267,7 +267,7 @@ export function Accounts() {
                   <select
                     value={formData.type}
                     onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as AccountType }))}
-                    className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 cursor-pointer"
+                    className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 cursor-pointer"
                   >
                     {AVAILABLE_TYPES.map(type => (
                       <option key={type} value={type}>
@@ -282,7 +282,7 @@ export function Accounts() {
                   <select
                     value={formData.currency}
                     onChange={e => setFormData(prev => ({ ...prev, currency: e.target.value as Currency }))}
-                    className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 cursor-pointer"
+                    className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 cursor-pointer"
                   >
                     {AVAILABLE_CURRENCIES.map(curr => (
                       <option key={curr} value={curr}>
@@ -301,7 +301,7 @@ export function Accounts() {
                     step="0.01"
                     value={formData.balance}
                     onChange={e => setFormData(prev => ({ ...prev, balance: e.target.value }))}
-                    className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 font-mono"
+                    className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 font-mono"
                     placeholder="0.00"
                   />
                   <p className="text-xs text-mono-500 mt-1">Баланс в дальнейшем корректируется операциями доходов и расходов.</p>
@@ -329,7 +329,7 @@ export function Accounts() {
                     type="button"
                     disabled={isSaving}
                     onClick={handleDelete}
-                    className="px-3.5 py-2 text-rose-600 hover:text-rose-700 hover:bg-rose-500/10 rounded-md transition-colors font-medium text-sm flex items-center gap-1.5"
+                    className="px-3.5 py-2 text-rose-600 hover:text-rose-700 hover:bg-rose-500/10 rounded-none transition-colors font-medium text-sm flex items-center gap-1.5"
                   >
                     <Trash2 className="w-4 h-4" />
                     <span>Удалить</span>
@@ -349,7 +349,7 @@ export function Accounts() {
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="flex items-center gap-2 px-4 py-2 bg-mono-900 text-mono-50 rounded-md hover:bg-mono-800 transition-colors font-medium text-sm disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 bg-mono-900 text-mono-50 rounded-none hover:bg-mono-800 transition-colors font-medium text-sm disabled:opacity-50"
                   >
                     {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                     <span>{editingAccount ? 'Сохранить' : 'Создать'}</span>

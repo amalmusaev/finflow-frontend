@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Wallet, ArrowLeftRight, Settings as SettingsIcon, PanelLeftClose, Sparkles } from 'lucide-react';
+import { Wallet, ArrowLeftRight, Settings as SettingsIcon, PanelLeftClose, Sparkles, BarChart3 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { isMockMode } from '../api';
 
@@ -16,6 +16,7 @@ export function Layout() {
   }, [isCollapsed]);
 
   const navItems = [
+    { name: 'Дашборд', path: '/dashboard', icon: BarChart3 },
     { name: 'Операции', path: '/', icon: ArrowLeftRight },
     { name: 'Счета', path: '/accounts', icon: Wallet },
     { name: 'ИИ-Ассистент', path: '/chat', icon: Sparkles },
@@ -25,23 +26,23 @@ export function Layout() {
   return (
     <div className="flex h-screen bg-mono-50">
       <aside className={cn(
-        "bg-mono-100 border-r border-mono-200 flex flex-col transition-all duration-300",
-        isCollapsed ? "w-20" : "w-64"
+        "bg-mono-50 border-r border-mono-200 flex flex-col transition-all duration-300",
+        isCollapsed ? "w-16" : "w-64"
       )}>
-        <div className={cn("p-6 flex items-center", isCollapsed ? "justify-center" : "justify-between")}>
-          {!isCollapsed && <h1 className="text-2xl font-bold text-mono-900 tracking-tight whitespace-nowrap overflow-hidden">Finflow</h1>}
+        <div className={cn("p-4 border-b border-mono-200 flex items-center h-16", isCollapsed ? "justify-center" : "justify-between")}>
+          {!isCollapsed && <h1 className="text-xl font-medium text-mono-900 tracking-tight whitespace-nowrap overflow-hidden">Finflow</h1>}
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)} 
-            className="p-1.5 rounded-md hover:bg-mono-200 text-mono-500 transition-colors"
+            className="p-1 text-mono-500 hover:text-mono-900 transition-colors"
             title={isCollapsed ? "Развернуть меню" : "Свернуть меню"}
           >
             <PanelLeftClose className={cn("w-5 h-5 transition-transform duration-300", isCollapsed && "rotate-180")} />
           </button>
         </div>
-        <nav className="flex-1 px-4 space-y-2 mt-2">
+        <nav className="flex-1 space-y-px py-4">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || (item.path === '/' && location.pathname === '/transactions');
             
             return (
               <Link
@@ -49,14 +50,14 @@ export function Layout() {
                 to={item.path}
                 title={isCollapsed ? item.name : undefined}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md transition-colors whitespace-nowrap overflow-hidden",
+                  "flex items-center gap-3 px-4 py-3 transition-colors whitespace-nowrap overflow-hidden border-l-2",
                   isActive 
-                    ? "bg-mono-200 text-mono-900 font-medium" 
-                    : "text-mono-600 hover:bg-mono-200/50 hover:text-mono-900",
-                  isCollapsed && "justify-center px-0"
+                    ? "border-mono-900 bg-mono-100 text-mono-900 font-medium" 
+                    : "border-transparent text-mono-500 hover:bg-mono-100/50 hover:text-mono-900",
+                  isCollapsed && "justify-center px-0 border-l-0"
                 )}
               >
-                <Icon className="w-5 h-5 flex-shrink-0" />
+                <Icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-mono-900" : "text-mono-400")} />
                 {!isCollapsed && <span>{item.name}</span>}
               </Link>
             );
@@ -64,8 +65,8 @@ export function Layout() {
         </nav>
         
         {isMockMode && !isCollapsed && (
-          <div className="p-4 px-6 text-mono-400 font-mono text-xs select-none">
-            Mock Mode
+          <div className="p-4 border-t border-mono-200 text-mono-400 font-mono text-xs select-none">
+            MOCK DATA
           </div>
         )}
       </aside>

@@ -477,8 +477,8 @@ export function Chat() {
       {/* Drag & Drop Visual Overlay */}
       {isDraggingOver && (
         <div className="absolute inset-0 z-40 bg-mono-950/60 backdrop-blur-xs flex items-center justify-center p-6 pointer-events-none">
-          <div className="border-2 border-dashed border-mono-200 bg-mono-900 text-mono-50 rounded-2xl p-8 max-w-md w-full flex flex-col items-center gap-3 shadow-2xl animate-in zoom-in-95 duration-150 text-center">
-            <div className="w-12 h-12 rounded-xl bg-mono-800 flex items-center justify-center text-mono-100">
+          <div className="border-2 border-dashed border-mono-200 bg-mono-900 text-mono-50 rounded-none p-8 max-w-md w-full flex flex-col items-center gap-3 shadow-2xl animate-in zoom-in-95 duration-150 text-center">
+            <div className="w-12 h-12 rounded-none bg-mono-800 flex items-center justify-center text-mono-100">
               <UploadCloud className="w-6 h-6 animate-bounce" />
             </div>
             <div>
@@ -496,7 +496,7 @@ export function Chat() {
           {messages.length > 0 && (
             <button
               onClick={handleClearCurrentHistory}
-              className="p-2 rounded-lg border border-mono-200/60 bg-mono-100/80 hover:bg-mono-200 text-mono-500 hover:text-mono-900 transition-all shadow-xs backdrop-blur-sm"
+              className="p-2 rounded-none border border-mono-200/60 bg-mono-100/80 hover:bg-mono-200 text-mono-500 hover:text-mono-900 transition-all shadow-xs backdrop-blur-sm"
               title="Очистить историю текущего диалога"
             >
               <Trash2 className="w-4 h-4" />
@@ -528,7 +528,7 @@ export function Chat() {
                   <button
                     key={index}
                     onClick={() => handleSendMessage(item.prompt)}
-                    className="p-4 rounded-xl bg-mono-100/70 border border-mono-200 hover:border-mono-300 hover:bg-mono-200/50 transition-all text-left group flex flex-col gap-1.5"
+                    className="p-4 rounded-none bg-mono-100/70 border border-mono-200 hover:border-mono-300 hover:bg-mono-200/50 transition-all text-left group flex flex-col gap-1.5"
                   >
                     <div className="flex items-center gap-2">
                       <span className="text-base">{item.icon}</span>
@@ -556,10 +556,10 @@ export function Chat() {
                   <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Sparkles className="w-5 h-5 text-mono-900" />
                   </div>
-                  <div className="bg-mono-100 border border-mono-200 rounded-xl px-4 py-3 text-xs text-mono-600 flex items-center gap-2.5">
-                    <span className="w-2 h-2 rounded-full bg-mono-400 animate-pulse" />
-                    <span className="w-2 h-2 rounded-full bg-mono-400 animate-pulse [animation-delay:200ms]" />
-                    <span className="w-2 h-2 rounded-full bg-mono-400 animate-pulse [animation-delay:400ms]" />
+                  <div className="bg-mono-50 border border-mono-200 rounded-none px-4 py-3 text-xs text-mono-600 flex items-center gap-2.5">
+                    <span className="w-2 h-2 rounded-none bg-mono-400 animate-pulse" />
+                    <span className="w-2 h-2 rounded-none bg-mono-400 animate-pulse [animation-delay:200ms]" />
+                    <span className="w-2 h-2 rounded-none bg-mono-400 animate-pulse [animation-delay:400ms]" />
                     <span className="font-mono text-mono-500 ml-1">Анализирую данные...</span>
                   </div>
                 </div>
@@ -582,7 +582,7 @@ export function Chat() {
                   <button
                     key={idx}
                     onClick={() => handleSendMessage(item.prompt)}
-                    className="px-2.5 py-1 rounded-full bg-mono-100 hover:bg-mono-200 border border-mono-200 text-mono-700 text-[11px] font-medium whitespace-nowrap transition-colors"
+                    className="px-2.5 py-1 rounded-none bg-mono-100 hover:bg-mono-200 border border-mono-200 text-mono-700 text-[11px] font-medium whitespace-nowrap transition-colors"
                   >
                     {item.icon} {item.title}
                   </button>
@@ -592,7 +592,7 @@ export function Chat() {
 
             {/* Upload Error Banner */}
             {uploadError && (
-              <div className="mb-2 p-2 px-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-between animate-in fade-in duration-150">
+              <div className="mb-2 p-2 px-3 rounded-none bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-between animate-in fade-in duration-150">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500" />
                   <span>{uploadError}</span>
@@ -607,21 +607,21 @@ export function Chat() {
             )}
 
             {/* Input Box Container */}
-            <div className="relative flex flex-col bg-mono-100 border border-mono-200 focus-within:border-mono-400 focus-within:ring-1 focus-within:ring-mono-400 rounded-xl p-2 transition-all">
+            <div className="relative flex flex-col bg-mono-50 border border-mono-200 focus-within:border-mono-400 focus-within:ring-1 focus-within:ring-mono-400 rounded-none p-2 transition-all">
               {/* Attached Images Preview Row */}
               {attachedImages.length > 0 && (
-                <div className="flex items-center gap-2 p-2 mb-2 bg-mono-200/60 rounded-lg overflow-x-auto border border-mono-300/40">
+                <div className="flex items-center gap-2 p-2 mb-2 bg-mono-200/60 rounded-none overflow-x-auto border border-mono-300/40">
                   {attachedImages.map((img) => (
                     <div key={img.id} className="relative group/thumb flex-shrink-0">
                       <img
                         src={img.url}
                         alt={img.name}
-                        className="w-14 h-14 object-cover rounded-md border border-mono-300 shadow-xs"
+                        className="w-14 h-14 object-cover rounded-none border border-mono-300 shadow-xs"
                       />
                       <button
                         type="button"
                         onClick={() => handleRemoveAttachedImage(img.id)}
-                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-mono-900 hover:bg-rose-600 text-mono-50 rounded-full flex items-center justify-center shadow-xs transition-colors"
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-mono-900 hover:bg-rose-600 text-mono-50 rounded-none flex items-center justify-center shadow-xs transition-colors"
                         title="Удалить изображение"
                       >
                         <X className="w-3 h-3" />
@@ -644,7 +644,7 @@ export function Chat() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isGenerating || attachedImages.length >= MAX_ATTACHED_FILES}
-                  className="p-2 rounded-lg text-mono-500 hover:text-mono-900 hover:bg-mono-200/80 transition-colors disabled:opacity-40 flex-shrink-0"
+                  className="p-2 rounded-none text-mono-500 hover:text-mono-900 hover:bg-mono-200/80 transition-colors disabled:opacity-40 flex-shrink-0"
                   title="Прикрепить изображение чека, квитанции или скриншота (или вставьте через Ctrl+V)"
                 >
                   <ImagePlus className="w-4 h-4" />
@@ -671,7 +671,7 @@ export function Chat() {
                     onClick={() => handleSendMessage()}
                     disabled={!canSend}
                     className={cn(
-                      "p-2 rounded-lg transition-all flex items-center justify-center",
+                      "p-2 rounded-none transition-all flex items-center justify-center",
                       canSend
                         ? "bg-mono-900 text-mono-50 hover:bg-mono-800 shadow-xs"
                         : "bg-mono-200 text-mono-400 cursor-not-allowed"

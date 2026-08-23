@@ -19,7 +19,7 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
   const flushTable = (key: number) => {
     if (inTable && (tableHeader.length > 0 || tableRows.length > 0)) {
       elements.push(
-        <div key={`table-${key}`} className="my-3 overflow-x-auto rounded-lg border border-mono-200">
+        <div key={`table-${key}`} className="my-3 overflow-x-auto rounded-none border border-mono-200">
           <table className="w-full text-left text-xs border-collapse">
             {tableHeader.length > 0 && (
               <thead className="bg-mono-200/60 text-mono-900 font-semibold border-b border-mono-200">

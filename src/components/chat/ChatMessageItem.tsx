@@ -45,7 +45,7 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
             <Sparkles className="w-5 h-5 text-mono-900" />
           </div>
         ) : (
-          <div className="w-8 h-8 rounded-lg bg-mono-200 text-mono-800 flex items-center justify-center flex-shrink-0 text-xs shadow-xs mt-0.5">
+          <div className="w-8 h-8 rounded-none bg-mono-200 text-mono-800 flex items-center justify-center flex-shrink-0 text-xs shadow-xs mt-0.5">
             <User className="w-4 h-4" />
           </div>
         )}
@@ -69,7 +69,7 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
           {/* Bubble */}
           <div
             className={cn(
-              "relative rounded-xl px-4 py-3 text-sm shadow-xs border transition-colors space-y-2.5",
+              "relative rounded-none px-4 py-3 text-sm shadow-xs border transition-colors space-y-2.5",
               isAssistant
                 ? "bg-mono-100 border-mono-200 text-mono-900"
                 : "bg-mono-900 border-mono-900 text-mono-50"
@@ -91,7 +91,7 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
                   <div
                     key={img.id}
                     onClick={() => setActiveImage(img)}
-                    className="group/img relative rounded-lg overflow-hidden border border-mono-700/50 bg-mono-950/20 cursor-pointer aspect-video sm:aspect-4/3 max-h-56 flex items-center justify-center transition-all hover:border-mono-400 hover:shadow-md"
+                    className="group/img relative rounded-none overflow-hidden border border-mono-700/50 bg-mono-950/20 cursor-pointer aspect-video sm:aspect-4/3 max-h-56 flex items-center justify-center transition-all hover:border-mono-400 hover:"
                   >
                     <img
                       src={img.url}

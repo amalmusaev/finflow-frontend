@@ -99,7 +99,7 @@ export function Settings() {
         <button 
           onClick={loadCategories}
           disabled={isLoading}
-          className="p-2 border border-mono-200 rounded-md hover:bg-mono-200 text-mono-600 transition-colors disabled:opacity-50"
+          className="p-2 border border-mono-200 rounded-none hover:bg-mono-200 text-mono-600 transition-colors disabled:opacity-50"
           title="Обновить данные"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -107,7 +107,7 @@ export function Settings() {
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/30 rounded-lg flex items-center justify-between text-rose-700 dark:text-rose-400">
+        <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/30 rounded-none flex items-center justify-between text-rose-700 dark:text-rose-400">
           <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
             <span className="text-sm font-medium">{error}</span>
@@ -123,7 +123,7 @@ export function Settings() {
 
       <div className="space-y-6 pb-8">
         {/* Appearance Section */}
-        <section className="bg-mono-100 border border-mono-200 rounded-xl p-6">
+        <section className="bg-mono-50 border border-mono-200 rounded-none p-6">
           <h2 className="text-lg font-semibold text-mono-900 mb-1">Внешний вид</h2>
           <p className="text-sm text-mono-500 mb-4">Настройка темы оформления интерфейса FinFlow.</p>
           <div className="flex items-center justify-between pt-2">
@@ -135,7 +135,7 @@ export function Settings() {
             </div>
             <button 
               onClick={toggleTheme}
-              className="flex items-center gap-2 px-4 py-2 bg-mono-200 hover:bg-mono-300 text-mono-900 rounded-md transition-colors text-sm font-medium"
+              className="flex items-center gap-2 px-4 py-2 bg-mono-200 hover:bg-mono-300 text-mono-900 rounded-none transition-colors text-sm font-medium"
             >
               {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
               <span>{theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}</span>
@@ -144,7 +144,7 @@ export function Settings() {
         </section>
 
         {/* General Settings Section */}
-        <section className="bg-mono-100 border border-mono-200 rounded-xl p-6">
+        <section className="bg-mono-50 border border-mono-200 rounded-none p-6">
           <h2 className="text-lg font-semibold text-mono-900 mb-1">Основные параметры</h2>
           <p className="text-sm text-mono-500 mb-4">Настройка предпочтений для новых операций и счетов.</p>
           <div className="space-y-4 pt-2">
@@ -154,7 +154,7 @@ export function Settings() {
                 <select 
                   value={defaultCurrency}
                   onChange={e => handleCurrencyChange(e.target.value as Currency)}
-                  className="w-full appearance-none bg-mono-50 border border-mono-200 rounded-md pl-3 pr-10 py-2 text-mono-900 focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-sm cursor-pointer"
+                  className="w-full appearance-none bg-mono-50 border border-mono-200 rounded-none pl-3 pr-10 py-2 text-mono-900 focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-sm cursor-pointer"
                 >
                   {(Object.keys(CURRENCY_LABELS) as Currency[]).map(curr => (
                     <option key={curr} value={curr}>
@@ -169,7 +169,7 @@ export function Settings() {
         </section>
 
         {/* Categories Section */}
-        <section className="bg-mono-100 border border-mono-200 rounded-xl p-6">
+        <section className="bg-mono-50 border border-mono-200 rounded-none p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-lg font-semibold text-mono-900">Категории операций</h2>
@@ -181,7 +181,7 @@ export function Settings() {
                 setNewCategoryType('expense');
                 setIsCategoryModalOpen(true);
               }}
-              className="flex items-center gap-1.5 text-sm font-medium text-mono-50 bg-mono-900 px-3.5 py-1.5 rounded-md hover:bg-mono-800 transition-colors shadow-sm"
+              className="flex items-center gap-1.5 text-sm font-medium text-mono-50 bg-mono-900 px-3.5 py-1.5 rounded-none hover:bg-mono-800 transition-colors "
             >
               <Plus className="w-4 h-4" />
               <span>Добавить</span>
@@ -207,7 +207,7 @@ export function Settings() {
                 ) : (
                   <ul className="space-y-2 max-h-80 overflow-y-auto pr-1">
                     {expenseCategories.map(c => (
-                      <li key={c.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-mono-50 border border-mono-200 group hover:border-mono-300 transition-colors">
+                      <li key={c.id} className="flex items-center justify-between px-3 py-2 rounded-none bg-mono-50 border border-mono-200 group hover:border-mono-300 transition-colors">
                         <span className="text-sm font-medium text-mono-900">{c.name}</span>
                         <button 
                           onClick={() => handleDeleteCategory(c.id, c.name)}
@@ -234,7 +234,7 @@ export function Settings() {
                 ) : (
                   <ul className="space-y-2 max-h-80 overflow-y-auto pr-1">
                     {incomeCategories.map(c => (
-                      <li key={c.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-mono-50 border border-mono-200 group hover:border-mono-300 transition-colors">
+                      <li key={c.id} className="flex items-center justify-between px-3 py-2 rounded-none bg-mono-50 border border-mono-200 group hover:border-mono-300 transition-colors">
                         <span className="text-sm font-medium text-mono-900">{c.name}</span>
                         <button 
                           onClick={() => handleDeleteCategory(c.id, c.name)}
@@ -255,7 +255,7 @@ export function Settings() {
 
       {isCategoryModalOpen && (
         <div className="fixed inset-0 bg-mono-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-mono-50 rounded-xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col border border-mono-200">
+          <div className="bg-mono-50 rounded-none shadow-xl w-full max-w-sm overflow-hidden flex flex-col border border-mono-200">
             <div className="flex items-center justify-between p-5 border-b border-mono-200">
               <h2 className="text-lg font-semibold text-mono-900">Новая категория</h2>
               <button 
@@ -269,13 +269,13 @@ export function Settings() {
             <form onSubmit={handleAddCategory} className="p-5 flex flex-col gap-4">
               <div>
                 <label className="block text-sm font-medium text-mono-700 mb-1.5">Тип операции</label>
-                <div className="flex bg-mono-100 p-1 rounded-md border border-mono-200">
+                <div className="flex bg-mono-100 p-1 rounded-none border border-mono-200">
                   <button
                     type="button"
                     onClick={() => setNewCategoryType('expense')}
                     className={`flex-1 py-1.5 text-xs font-semibold rounded transition-colors ${
                       newCategoryType === 'expense'
-                        ? 'bg-mono-50 text-mono-900 shadow-sm'
+                        ? 'bg-mono-50 text-mono-900 '
                         : 'text-mono-500 hover:text-mono-800'
                     }`}
                   >
@@ -286,7 +286,7 @@ export function Settings() {
                     onClick={() => setNewCategoryType('income')}
                     className={`flex-1 py-1.5 text-xs font-semibold rounded transition-colors ${
                       newCategoryType === 'income'
-                        ? 'bg-mono-50 text-mono-900 shadow-sm'
+                        ? 'bg-mono-50 text-mono-900 '
                         : 'text-mono-500 hover:text-mono-800'
                     }`}
                   >
@@ -303,7 +303,7 @@ export function Settings() {
                   maxLength={128}
                   value={newCategoryName}
                   onChange={e => setNewCategoryName(e.target.value)}
-                  className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 placeholder:text-mono-400 text-sm"
+                  className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 placeholder:text-mono-400 text-sm"
                   placeholder="Например, Продукты, Рестораны"
                   autoFocus
                 />
@@ -321,7 +321,7 @@ export function Settings() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="flex items-center gap-2 px-4 py-2 bg-mono-900 text-mono-50 rounded-md hover:bg-mono-800 transition-colors font-medium text-sm disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-mono-900 text-mono-50 rounded-none hover:bg-mono-800 transition-colors font-medium text-sm disabled:opacity-50"
                 >
                   {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>Добавить</span>

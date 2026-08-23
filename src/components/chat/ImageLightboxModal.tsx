@@ -69,7 +69,7 @@ export function ImageLightboxModal({ image, onClose }: ImageLightboxModalProps) 
         className="absolute top-4 inset-x-4 flex items-center justify-between z-10 max-w-5xl mx-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 bg-mono-900/90 text-mono-100 px-3.5 py-1.5 rounded-xl border border-mono-800 backdrop-blur-md shadow-lg text-xs">
+        <div className="flex items-center gap-3 bg-mono-900/90 text-mono-100 px-3.5 py-1.5 rounded-none border border-mono-800 backdrop-blur-md  text-xs">
           <span className="font-medium truncate max-w-xs">{image.name}</span>
           {image.size && (
             <span className="text-mono-400 font-mono text-[11px]">
@@ -78,18 +78,18 @@ export function ImageLightboxModal({ image, onClose }: ImageLightboxModalProps) 
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 bg-mono-900/90 text-mono-100 p-1 rounded-xl border border-mono-800 backdrop-blur-md shadow-lg">
+        <div className="flex items-center gap-1.5 bg-mono-900/90 text-mono-100 p-1 rounded-none border border-mono-800 backdrop-blur-md ">
           <button
             onClick={handleZoomOut}
             disabled={zoomLevel <= 0.5}
-            className="p-1.5 rounded-lg hover:bg-mono-800 disabled:opacity-40 text-mono-300 hover:text-mono-100 transition-colors"
+            className="p-1.5 rounded-none hover:bg-mono-800 disabled:opacity-40 text-mono-300 hover:text-mono-100 transition-colors"
             title="Уменьшить"
           >
             <ZoomOut className="w-4 h-4" />
           </button>
           <button
             onClick={handleResetZoom}
-            className="px-2 py-1 rounded-lg hover:bg-mono-800 text-[11px] font-mono text-mono-300 hover:text-mono-100 transition-colors"
+            className="px-2 py-1 rounded-none hover:bg-mono-800 text-[11px] font-mono text-mono-300 hover:text-mono-100 transition-colors"
             title="Сбросить масштаб"
           >
             {Math.round(zoomLevel * 100)}%
@@ -97,7 +97,7 @@ export function ImageLightboxModal({ image, onClose }: ImageLightboxModalProps) 
           <button
             onClick={handleZoomIn}
             disabled={zoomLevel >= 3}
-            className="p-1.5 rounded-lg hover:bg-mono-800 disabled:opacity-40 text-mono-300 hover:text-mono-100 transition-colors"
+            className="p-1.5 rounded-none hover:bg-mono-800 disabled:opacity-40 text-mono-300 hover:text-mono-100 transition-colors"
             title="Увеличить"
           >
             <ZoomIn className="w-4 h-4" />
@@ -105,14 +105,14 @@ export function ImageLightboxModal({ image, onClose }: ImageLightboxModalProps) 
           <div className="w-px h-4 bg-mono-800 my-auto mx-0.5" />
           <button
             onClick={handleDownload}
-            className="p-1.5 rounded-lg hover:bg-mono-800 text-mono-300 hover:text-mono-100 transition-colors"
+            className="p-1.5 rounded-none hover:bg-mono-800 text-mono-300 hover:text-mono-100 transition-colors"
             title="Скачать изображение"
           >
             <Download className="w-4 h-4" />
           </button>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-rose-500/20 text-mono-300 hover:text-rose-400 transition-colors ml-1"
+            className="p-1.5 rounded-none hover:bg-rose-500/20 text-mono-300 hover:text-rose-400 transition-colors ml-1"
             title="Закрыть (Esc)"
           >
             <X className="w-4 h-4" />
@@ -129,7 +129,7 @@ export function ImageLightboxModal({ image, onClose }: ImageLightboxModalProps) 
           src={image.url}
           alt={image.name || 'Прикрепленное изображение'}
           style={{ transform: `scale(${zoomLevel})` }}
-          className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl transition-transform duration-150 select-none cursor-default"
+          className="max-w-full max-h-[80vh] object-contain rounded-none shadow-2xl transition-transform duration-150 select-none cursor-default"
         />
       </div>
     </div>

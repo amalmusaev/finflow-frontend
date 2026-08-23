@@ -18,6 +18,7 @@
 }
 
 :root {
+  color-scheme: light;
   --mono-50: #fafafa;
   --mono-100: #f4f4f5;
   --mono-200: #e4e4e7;
@@ -32,6 +33,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --mono-50: #09090b;
   --mono-100: #18181b;
   --mono-200: #27272a;
@@ -50,22 +52,35 @@
     @apply bg-mono-50 text-mono-900 font-sans antialiased h-screen overflow-hidden;
   }
   
+  ::selection {
+    @apply bg-mono-900 text-mono-50;
+  }
+  
+  .dark ::selection {
+    @apply bg-mono-50 text-mono-900;
+  }
+  
   #root {
     @apply h-full;
   }
 
-  /* Custom scrollbar */
+  select option {
+    background-color: var(--mono-100);
+    color: var(--mono-900);
+  }
+
+  /* Custom rigid scrollbar */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 4px;
+    height: 4px;
   }
   ::-webkit-scrollbar-track {
-    background: transparent;
+    @apply bg-mono-50 border-l border-mono-200;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-mono-200 rounded-full;
+    @apply bg-mono-300 rounded-none;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-mono-300;
+    @apply bg-mono-400;
   }
 }

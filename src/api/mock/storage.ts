@@ -1,9 +1,9 @@
 import type { Account, Category, Operation } from '../types';
 import { accounts as initialAccounts, categories as initialCategories, transactions as initialTransactions } from '../../lib/mockData';
 
-const MOCK_ACCOUNTS_KEY = 'finflow_mock_accounts_v1';
-const MOCK_CATEGORIES_KEY = 'finflow_mock_categories_v1';
-const MOCK_OPERATIONS_KEY = 'finflow_mock_operations_v1';
+const MOCK_ACCOUNTS_KEY = 'finflow_mock_accounts_v2';
+const MOCK_CATEGORIES_KEY = 'finflow_mock_categories_v2';
+const MOCK_OPERATIONS_KEY = 'finflow_mock_operations_v2';
 
 export function getMockAccounts(): Account[] {
   try {

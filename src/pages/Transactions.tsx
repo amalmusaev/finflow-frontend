@@ -251,14 +251,14 @@ export function Transactions() {
           <button 
             onClick={loadData}
             disabled={isLoading}
-            className="p-2 border border-mono-200 rounded-md hover:bg-mono-200 text-mono-600 transition-colors disabled:opacity-50"
+            className="p-2 border border-mono-200 rounded-none hover:bg-mono-200 text-mono-600 transition-colors disabled:opacity-50"
             title="Обновить список"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
           <button 
             onClick={handleCreate}
-            className="flex items-center gap-2 bg-mono-900 text-mono-50 px-4 py-2 rounded-md hover:bg-mono-800 transition-colors font-medium text-sm shadow-sm"
+            className="flex items-center gap-2 bg-mono-900 text-mono-50 px-4 py-2 rounded-none hover:bg-mono-800 transition-colors font-medium text-sm "
           >
             <Plus className="w-4 h-4" />
             <span>Новая операция</span>
@@ -267,7 +267,7 @@ export function Transactions() {
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/30 rounded-lg flex items-center justify-between text-rose-700 dark:text-rose-400">
+        <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/30 rounded-none flex items-center justify-between text-rose-700 dark:text-rose-400">
           <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
             <span className="text-sm font-medium">{error}</span>
@@ -291,12 +291,12 @@ export function Transactions() {
               placeholder="Поиск по описанию..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-mono-100 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 placeholder:text-mono-400 text-sm"
+              className="w-full pl-10 pr-4 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 placeholder:text-mono-400 text-sm"
             />
           </div>
           <button 
             onClick={() => setIsFilterOpen(!isFilterOpen)}
-            className={`flex items-center gap-2 px-4 py-2 border rounded-md transition-colors text-sm font-medium ${
+            className={`flex items-center gap-2 px-4 py-2 border rounded-none transition-colors text-sm font-medium ${
               isFilterOpen 
                 ? 'bg-mono-900 text-mono-50 border-mono-900' 
                 : 'bg-mono-100 border-mono-200 hover:bg-mono-200 text-mono-900'
@@ -305,7 +305,7 @@ export function Transactions() {
             <Filter className="w-4 h-4" />
             <span>Фильтры</span>
             {activeFiltersCount > 0 && (
-              <span className={`px-1.5 py-0.2 rounded-full text-[11px] font-mono font-medium ${
+              <span className={`px-1.5 py-0.2 rounded-none text-[11px] font-mono font-medium ${
                 isFilterOpen ? 'bg-mono-700 text-mono-100' : 'bg-mono-300 text-mono-800'
               }`}>
                 {activeFiltersCount}
@@ -315,7 +315,7 @@ export function Transactions() {
         </div>
 
         {isFilterOpen && (
-          <div className="p-4 bg-mono-100 border border-mono-200 rounded-xl space-y-4">
+          <div className="p-4 bg-mono-50 border border-mono-200 rounded-none space-y-4">
             {/* Main filter selectors */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
@@ -324,7 +324,7 @@ export function Transactions() {
                   <select
                     value={filters.type}
                     onChange={e => setFilters(prev => ({ ...prev, type: e.target.value as any }))}
-                    className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
+                    className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
                   >
                     <option value="all">Все типы</option>
                     <option value="expense">Расходы</option>
@@ -340,7 +340,7 @@ export function Transactions() {
                   <select
                     value={filters.accountId}
                     onChange={e => setFilters(prev => ({ ...prev, accountId: e.target.value }))}
-                    className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
+                    className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
                   >
                     <option value="all">Все счета ({accounts.length})</option>
                     {accounts.map(a => (
@@ -357,7 +357,7 @@ export function Transactions() {
                   <select
                     value={filters.categoryId}
                     onChange={e => setFilters(prev => ({ ...prev, categoryId: e.target.value }))}
-                    className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
+                    className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
                   >
                     <option value="all">Все категории ({categories.length})</option>
                     {categories.map(c => (
@@ -384,7 +384,7 @@ export function Transactions() {
                     type="date"
                     value={filters.startDate}
                     onChange={e => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="px-2.5 py-1.5 bg-mono-50 border border-mono-200 rounded-md text-xs font-mono text-mono-900 focus:outline-none focus:border-mono-400"
+                    className="px-2.5 py-1.5 bg-mono-50 border border-mono-200 rounded-none text-xs font-mono text-mono-900 focus:outline-none focus:border-mono-400"
                     title="Дата от"
                   />
                   <span className="text-mono-400 text-xs">—</span>
@@ -392,7 +392,7 @@ export function Transactions() {
                     type="date"
                     value={filters.endDate}
                     onChange={e => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
-                    className="px-2.5 py-1.5 bg-mono-50 border border-mono-200 rounded-md text-xs font-mono text-mono-900 focus:outline-none focus:border-mono-400"
+                    className="px-2.5 py-1.5 bg-mono-50 border border-mono-200 rounded-none text-xs font-mono text-mono-900 focus:outline-none focus:border-mono-400"
                     title="Дата до"
                   />
                 </div>
@@ -446,7 +446,7 @@ export function Transactions() {
       </div>
 
       {/* Table Container */}
-      <div className="flex-1 bg-mono-100 border border-mono-200 rounded-xl overflow-hidden flex flex-col min-h-0">
+      <div className="flex-1 bg-mono-50 border border-mono-200 rounded-none overflow-hidden flex flex-col min-h-0">
         {isLoading ? (
           <div className="flex-1 flex flex-col items-center justify-center text-mono-500 py-16">
             <Loader2 className="w-8 h-8 animate-spin text-mono-400 mb-3" />
@@ -463,7 +463,7 @@ export function Transactions() {
             {operations.length === 0 && (
               <button 
                 onClick={handleCreate}
-                className="flex items-center gap-2 bg-mono-900 text-mono-50 px-4 py-2 rounded-md hover:bg-mono-800 transition-colors text-sm font-medium"
+                className="flex items-center gap-2 bg-mono-900 text-mono-50 px-4 py-2 rounded-none hover:bg-mono-800 transition-colors text-sm font-medium"
               >
                 <Plus className="w-4 h-4" />
                 <span>Добавить операцию</span>
@@ -501,7 +501,7 @@ export function Transactions() {
                       </td>
                       <td className="py-3 px-4 font-medium text-mono-900 text-sm">
                         <div className="flex items-center gap-2">
-                          <span className={`p-1 rounded-full ${isIncome ? 'bg-emerald-500/10 text-emerald-600' : 'bg-mono-200 text-mono-600'}`}>
+                          <span className={`p-1 rounded-none ${isIncome ? 'bg-emerald-500/10 text-emerald-600' : 'bg-mono-200 text-mono-600'}`}>
                             {isIncome ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
                           </span>
                           <span>{op.description}</span>
@@ -532,7 +532,7 @@ export function Transactions() {
       {/* Add / Edit Operation Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-mono-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-mono-50 rounded-xl shadow-xl w-full max-w-md overflow-hidden flex flex-col border border-mono-200 max-h-[90vh]">
+          <div className="bg-mono-50 rounded-none shadow-xl w-full max-w-md overflow-hidden flex flex-col border border-mono-200 max-h-[90vh]">
             <div className="flex items-center justify-between p-5 border-b border-mono-200 shrink-0">
               <h2 className="text-lg font-semibold text-mono-900">
                 {editingOperation ? 'Редактировать операцию' : 'Новая операция'}
@@ -547,7 +547,7 @@ export function Transactions() {
             
             <form onSubmit={handleSubmit} className="p-5 overflow-y-auto flex flex-col gap-4">
               {/* Type Switcher */}
-              <div className="flex bg-mono-100 p-1 rounded-md border border-mono-200">
+              <div className="flex bg-mono-100 p-1 rounded-none border border-mono-200">
                 <button
                   type="button"
                   onClick={() => {
@@ -559,7 +559,7 @@ export function Transactions() {
                   }}
                   className={`flex-1 py-1.5 text-xs font-semibold rounded transition-colors ${
                     formData.type === 'expense'
-                      ? 'bg-mono-50 text-mono-900 shadow-sm'
+                      ? 'bg-mono-50 text-mono-900 '
                       : 'text-mono-500 hover:text-mono-800'
                   }`}
                 >
@@ -576,7 +576,7 @@ export function Transactions() {
                   }}
                   className={`flex-1 py-1.5 text-xs font-semibold rounded transition-colors ${
                     formData.type === 'income'
-                      ? 'bg-mono-50 text-mono-900 shadow-sm'
+                      ? 'bg-mono-50 text-mono-900 '
                       : 'text-mono-500 hover:text-mono-800'
                   }`}
                 >
@@ -594,7 +594,7 @@ export function Transactions() {
                   step="0.01"
                   value={formData.amount}
                   onChange={e => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                  className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 font-mono text-base placeholder:text-mono-400"
+                  className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 font-mono text-base placeholder:text-mono-400"
                   placeholder="0.00"
                   autoFocus={!editingOperation}
                 />
@@ -608,7 +608,7 @@ export function Transactions() {
                   required
                   value={formData.date}
                   onChange={e => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                  className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 text-sm font-mono"
+                  className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 text-sm font-mono"
                 />
               </div>
 
@@ -621,7 +621,7 @@ export function Transactions() {
                   maxLength={255}
                   value={formData.description}
                   onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 placeholder:text-mono-400 text-sm"
+                  className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 placeholder:text-mono-400 text-sm"
                   placeholder="Например, Покупка продуктов, Зарплата"
                 />
               </div>
@@ -634,7 +634,7 @@ export function Transactions() {
                     required
                     value={formData.categoryId}
                     onChange={e => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
-                    className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
+                    className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
                   >
                     <option value="" disabled>Выберите категорию</option>
                     {categories.filter(c => c.type === formData.type).map(c => (
@@ -653,7 +653,7 @@ export function Transactions() {
                     required
                     value={formData.accountId}
                     onChange={e => setFormData(prev => ({ ...prev, accountId: e.target.value }))}
-                    className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-md focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
+                    className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
                   >
                     <option value="" disabled>Выберите счет</option>
                     {accounts.map(a => (
@@ -670,7 +670,7 @@ export function Transactions() {
                     type="button"
                     disabled={isSaving}
                     onClick={handleDelete}
-                    className="px-3.5 py-2 text-rose-600 hover:text-rose-700 hover:bg-rose-500/10 rounded-md transition-colors font-medium text-sm flex items-center gap-1.5"
+                    className="px-3.5 py-2 text-rose-600 hover:text-rose-700 hover:bg-rose-500/10 rounded-none transition-colors font-medium text-sm flex items-center gap-1.5"
                   >
                     <Trash2 className="w-4 h-4" />
                     <span>Удалить</span>
@@ -690,7 +690,7 @@ export function Transactions() {
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="flex items-center gap-2 px-4 py-2 bg-mono-900 text-mono-50 rounded-md hover:bg-mono-800 transition-colors font-medium text-sm disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 bg-mono-900 text-mono-50 rounded-none hover:bg-mono-800 transition-colors font-medium text-sm disabled:opacity-50"
                   >
                     {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                     <span>{editingOperation ? 'Сохранить' : 'Создать'}</span>

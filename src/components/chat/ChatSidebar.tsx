@@ -85,7 +85,7 @@ export function ChatSidebar({
       <div className="p-3 flex items-center justify-between gap-2">
         <button
           onClick={onToggle}
-          className="p-2 rounded-lg text-mono-500 hover:text-mono-900 hover:bg-mono-200 transition-colors"
+          className="p-2 rounded-none text-mono-500 hover:text-mono-900 hover:bg-mono-200 transition-colors"
           title="Скрыть панель чатов"
         >
           <PanelRightClose className="w-4 h-4" />
@@ -93,7 +93,7 @@ export function ChatSidebar({
 
         <button
           onClick={onCreateSession}
-          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-mono-900 text-mono-50 hover:bg-mono-800 text-xs font-medium transition-colors shadow-xs"
+          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-none bg-mono-900 text-mono-50 hover:bg-mono-800 text-xs font-medium transition-colors shadow-xs"
           title="Создать новый чат"
         >
           <Plus className="w-3.5 h-3.5" />
@@ -117,7 +117,7 @@ export function ChatSidebar({
                 key={session.id}
                 onClick={() => !isEditing && onSelectSession(session.id)}
                 className={cn(
-                  "group relative flex items-center justify-between gap-2 px-2.5 h-9 rounded-lg text-xs cursor-pointer transition-colors",
+                  "group relative flex items-center justify-between gap-2 px-2.5 h-9 rounded-none text-xs cursor-pointer transition-colors",
                   isActive
                     ? "bg-mono-200 text-mono-950 font-medium shadow-xs"
                     : "text-mono-600 hover:bg-mono-200/50 hover:text-mono-900"
@@ -205,7 +205,7 @@ export function ToggleSidebarButton({ isOpen, onToggle }: { isOpen: boolean; onT
   return (
     <button
       onClick={onToggle}
-      className="p-2 rounded-lg border border-mono-200/60 bg-mono-100/80 hover:bg-mono-200 text-mono-500 hover:text-mono-900 transition-all shadow-xs backdrop-blur-sm"
+      className="p-2 rounded-none border border-mono-200/60 bg-mono-100/80 hover:bg-mono-200 text-mono-500 hover:text-mono-900 transition-all shadow-xs backdrop-blur-sm"
       title="Показать историю чатов"
     >
       <PanelRight className="w-4 h-4" />
