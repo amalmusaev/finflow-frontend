@@ -327,12 +327,10 @@ export function Dashboard() {
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
       {/* Top Header & Controls */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-mono-900 tracking-tight">
-            Дашборд
-          </h1>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold text-mono-900 tracking-tight shrink-0">
+          Дашборд
+        </h1>
 
         {/* Global Filters: Accounts & Date Range */}
         <div className="flex flex-wrap items-center gap-3">

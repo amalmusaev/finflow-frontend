@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Wallet, ArrowLeftRight, Settings as SettingsIcon, PanelLeftClose, Sparkles, BarChart3 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { isMockMode } from '../api';
+import { Logo } from './Logo';
 
 export function Layout() {
   const location = useLocation();
@@ -30,7 +31,7 @@ export function Layout() {
         isCollapsed ? "w-16" : "w-64"
       )}>
         <div className={cn("p-4 border-b border-mono-200 flex items-center h-16", isCollapsed ? "justify-center" : "justify-between")}>
-          {!isCollapsed && <h1 className="text-xl font-medium text-mono-900 tracking-tight whitespace-nowrap overflow-hidden">Finflow</h1>}
+          {!isCollapsed && <Logo className="h-10 w-auto -ml-2" />}
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)} 
             className="p-1 text-mono-500 hover:text-mono-900 transition-colors"
