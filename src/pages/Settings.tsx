@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Moon, Sun, ChevronDown, Plus, X, Trash2, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Moon, Sun, ChevronDown, Plus, X, Trash2, Loader2, AlertCircle, RefreshCw, Pencil } from 'lucide-react';
 import { api } from '../api';
 import type { Category, OperationType, Currency } from '../api';
 
@@ -19,8 +19,9 @@ export function Settings() {
   const [error, setError] = useState<string | null>(null);
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryType, setNewCategoryType] = useState<OperationType>('expense');
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [categoryName, setCategoryName] = useState('');
+  const [categoryType, setCategoryType] = useState<OperationType>('expense');
 
   const loadCategories = useCallback(async () => {
     try {
@@ -44,6 +45,20 @@ export function Settings() {
     localStorage.setItem('finflow_currency', curr);
   };
 
+  const handleOpenCreateCategory = () => {
+    setEditingCategory(null);
+    setCategoryName('');
+    setCategoryType('expense');
+    setIsCategoryModalOpen(true);
+  };
+
+  const handleOpenEditCategory = (cat: Category) => {
+    setEditingCategory(cat);
+    setCategoryName(cat.name);
+    setCategoryType(cat.type);
+    setIsCategoryModalOpen(true);
+  };
+
   const handleDeleteCategory = async (id: string, name: string) => {
     if (!window.confirm(`Удалить категорию "${name}"?`)) return;
     try {
@@ -54,22 +69,31 @@ export function Settings() {
     }
   };
 
-  const handleAddCategory = async (e: React.FormEvent) => {
+  const handleSubmitCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    const name = newCategoryName.trim();
+    const name = categoryName.trim();
     if (!name) return;
 
     try {
       setIsSaving(true);
-      const created = await api.categories.createCategory({
-        name,
-        type: newCategoryType,
-      });
-      setCategories(prev => [...prev, created]);
+      if (editingCategory) {
+        const updated = await api.categories.updateCategory(editingCategory.id, {
+          name,
+          type: categoryType,
+        });
+        setCategories(prev => prev.map(c => (c.id === editingCategory.id ? updated : c)));
+      } else {
+        const created = await api.categories.createCategory({
+          name,
+          type: categoryType,
+        });
+        setCategories(prev => [...prev, created]);
+      }
       setIsCategoryModalOpen(false);
-      setNewCategoryName('');
+      setEditingCategory(null);
+      setCategoryName('');
     } catch (err: any) {
-      alert(`Не удалось создать категорию: ${err.message}`);
+      alert(`Не удалось ${editingCategory ? 'сохранить' : 'создать'} категорию: ${err.message}`);
     } finally {
       setIsSaving(false);
     }
@@ -162,11 +186,7 @@ export function Settings() {
               <p className="text-sm text-mono-500">Управление категориями для классификации доходов и расходов.</p>
             </div>
             <button 
-              onClick={() => {
-                setNewCategoryName('');
-                setNewCategoryType('expense');
-                setIsCategoryModalOpen(true);
-              }}
+              onClick={handleOpenCreateCategory}
               className="flex items-center gap-1.5 text-sm font-medium text-mono-50 bg-mono-900 px-3.5 py-1.5 rounded-none hover:bg-mono-800 transition-colors "
             >
               <Plus className="w-4 h-4" />
@@ -194,14 +214,23 @@ export function Settings() {
                   <ul className="space-y-2 max-h-80 overflow-y-auto pr-1">
                     {expenseCategories.map(c => (
                       <li key={c.id} className="flex items-center justify-between px-3 py-2 rounded-none bg-mono-50 border border-mono-200 group hover:border-mono-300 transition-colors">
-                        <span className="text-sm font-medium text-mono-900">{c.name}</span>
-                        <button 
-                          onClick={() => handleDeleteCategory(c.id, c.name)}
-                          className="text-mono-400 hover:text-rose-600 transition-colors opacity-0 group-hover:opacity-100 p-1"
-                          title="Удалить категорию"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <span className="text-sm font-medium text-mono-900 truncate mr-2">{c.name}</span>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => handleOpenEditCategory(c)}
+                            className="text-mono-400 hover:text-mono-800 transition-colors p-1"
+                            title="Редактировать категорию"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteCategory(c.id, c.name)}
+                            className="text-mono-400 hover:text-rose-600 transition-colors p-1"
+                            title="Удалить категорию"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -221,14 +250,23 @@ export function Settings() {
                   <ul className="space-y-2 max-h-80 overflow-y-auto pr-1">
                     {incomeCategories.map(c => (
                       <li key={c.id} className="flex items-center justify-between px-3 py-2 rounded-none bg-mono-50 border border-mono-200 group hover:border-mono-300 transition-colors">
-                        <span className="text-sm font-medium text-mono-900">{c.name}</span>
-                        <button 
-                          onClick={() => handleDeleteCategory(c.id, c.name)}
-                          className="text-mono-400 hover:text-rose-600 transition-colors opacity-0 group-hover:opacity-100 p-1"
-                          title="Удалить категорию"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <span className="text-sm font-medium text-mono-900 truncate mr-2">{c.name}</span>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => handleOpenEditCategory(c)}
+                            className="text-mono-400 hover:text-mono-800 transition-colors p-1"
+                            title="Редактировать категорию"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteCategory(c.id, c.name)}
+                            className="text-mono-400 hover:text-rose-600 transition-colors p-1"
+                            title="Удалить категорию"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -243,7 +281,9 @@ export function Settings() {
         <div className="fixed inset-0 bg-mono-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-mono-50 rounded-none shadow-xl w-full max-w-sm overflow-hidden flex flex-col border border-mono-200">
             <div className="flex items-center justify-between p-5 border-b border-mono-200">
-              <h2 className="text-lg font-semibold text-mono-900">Новая категория</h2>
+              <h2 className="text-lg font-semibold text-mono-900">
+                {editingCategory ? 'Редактировать категорию' : 'Новая категория'}
+              </h2>
               <button 
                 onClick={() => !isSaving && setIsCategoryModalOpen(false)} 
                 className="text-mono-500 hover:text-mono-900 transition-colors p-1"
@@ -252,15 +292,15 @@ export function Settings() {
               </button>
             </div>
             
-            <form onSubmit={handleAddCategory} className="p-5 flex flex-col gap-4">
+            <form onSubmit={handleSubmitCategory} className="p-5 flex flex-col gap-4">
               <div>
                 <label className="block text-sm font-medium text-mono-700 mb-1.5">Тип операции</label>
                 <div className="flex bg-mono-100 p-1 rounded-none border border-mono-200">
                   <button
                     type="button"
-                    onClick={() => setNewCategoryType('expense')}
+                    onClick={() => setCategoryType('expense')}
                     className={`flex-1 py-1.5 text-xs font-semibold rounded transition-colors ${
-                      newCategoryType === 'expense'
+                      categoryType === 'expense'
                         ? 'bg-mono-50 text-mono-900 '
                         : 'text-mono-500 hover:text-mono-800'
                     }`}
@@ -269,9 +309,9 @@ export function Settings() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setNewCategoryType('income')}
+                    onClick={() => setCategoryType('income')}
                     className={`flex-1 py-1.5 text-xs font-semibold rounded transition-colors ${
-                      newCategoryType === 'income'
+                      categoryType === 'income'
                         ? 'bg-mono-50 text-mono-900 '
                         : 'text-mono-500 hover:text-mono-800'
                     }`}
@@ -287,8 +327,8 @@ export function Settings() {
                   type="text"
                   required
                   maxLength={128}
-                  value={newCategoryName}
-                  onChange={e => setNewCategoryName(e.target.value)}
+                  value={categoryName}
+                  onChange={e => setCategoryName(e.target.value)}
                   className="w-full px-3 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 placeholder:text-mono-400 text-sm"
                   placeholder="Например, Продукты, Рестораны"
                   autoFocus
@@ -310,7 +350,7 @@ export function Settings() {
                   className="flex items-center gap-2 px-4 py-2 bg-mono-900 text-mono-50 rounded-none hover:bg-mono-800 transition-colors font-medium text-sm disabled:opacity-50"
                 >
                   {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  <span>Добавить</span>
+                  <span>{editingCategory ? 'Сохранить' : 'Добавить'}</span>
                 </button>
               </div>
             </form>
