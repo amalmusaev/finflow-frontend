@@ -31,14 +31,26 @@ export function Layout() {
         isCollapsed ? "w-16" : "w-64"
       )}>
         <div className={cn("p-4 border-b border-mono-200 flex items-center h-16", isCollapsed ? "justify-center" : "justify-between")}>
-          {!isCollapsed && <Logo className="h-10 w-auto -ml-2" />}
-          <button 
-            onClick={() => setIsCollapsed(!isCollapsed)} 
-            className="p-1 text-mono-500 hover:text-mono-900 transition-colors"
-            title={isCollapsed ? "Развернуть меню" : "Свернуть меню"}
-          >
-            <PanelLeftClose className={cn("w-5 h-5 transition-transform duration-300", isCollapsed && "rotate-180")} />
-          </button>
+          {!isCollapsed ? (
+            <>
+              <Logo className="h-9 w-9 flex-shrink-0" />
+              <button 
+                onClick={() => setIsCollapsed(true)} 
+                className="p-1.5 text-mono-500 hover:text-mono-900 transition-colors rounded-md hover:bg-mono-100 cursor-pointer"
+                title="Свернуть меню"
+              >
+                <PanelLeftClose className="w-5 h-5" />
+              </button>
+            </>
+          ) : (
+            <button 
+              onClick={() => setIsCollapsed(false)} 
+              className="p-1 rounded-md hover:opacity-80 transition-opacity flex items-center justify-center cursor-pointer"
+              title="Развернуть меню"
+            >
+              <Logo className="h-9 w-9 flex-shrink-0" />
+            </button>
+          )}
         </div>
         <nav className="flex-1 space-y-px py-4">
           {navItems.map((item) => {
