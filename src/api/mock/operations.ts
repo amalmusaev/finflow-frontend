@@ -14,6 +14,10 @@ import {
 } from './storage';
 
 export const mockOperationsApi = {
+  async getAllOperations(filters: Omit<OperationFilters, 'limit' | 'offset'> = {}): Promise<OperationListResponse> {
+    return this.getOperations(filters);
+  },
+
   async getOperations(filters: OperationFilters = {}): Promise<OperationListResponse> {
     await delay();
     let operations = getMockOperations();

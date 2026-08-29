@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Search, Filter, Plus, X, Trash2, ChevronDown, Loader2, AlertCircle, RefreshCw, ArrowDownRight, ArrowUpRight, Calendar, RotateCcw } from 'lucide-react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { api } from '../api';
 import type { Operation, Account, Category, OperationType } from '../api';
-
 import { CURRENCY_SYMBOLS, formatDate } from '../lib/utils';
 
 export function Transactions() {
@@ -50,13 +50,15 @@ export function Transactions() {
     accountId: '',
   });
 
+  const parentRef = useRef<HTMLDivElement>(null);
+
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
       const [opsRes, accsRes, catsRes] = await Promise.all([
-        api.operations.getOperations(),
+        api.operations.getAllOperations(),
         api.accounts.getAccounts(),
         api.categories.getCategories(),
       ]);
@@ -87,6 +89,14 @@ export function Transactions() {
       return matchesSearch && matchesType && matchesAccount && matchesCategory && matchesStartDate && matchesEndDate;
     });
   }, [operations, search, filters]);
+
+  // Virtualizer for high-performance rendering of huge datasets
+  const rowVirtualizer = useVirtualizer({
+    count: filteredOperations.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 52,
+    overscan: 15,
+  });
 
   // Account map for quick lookup
   const accountMap = useMemo(() => {
@@ -246,6 +256,9 @@ export function Transactions() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-semibold text-mono-900 tracking-tight">Операции</h1>
+          <p className="text-xs text-mono-500 mt-1">
+            Всего операций: <span className="font-mono font-semibold text-mono-900">{filteredOperations.length}</span>
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <button 
@@ -258,7 +271,7 @@ export function Transactions() {
           </button>
           <button 
             onClick={handleCreate}
-            className="flex items-center gap-2 bg-mono-900 text-mono-50 px-4 py-2 rounded-none hover:bg-mono-800 transition-colors font-medium text-sm "
+            className="flex items-center gap-2 bg-mono-900 text-mono-50 px-4 py-2 rounded-none hover:bg-mono-800 transition-colors font-medium text-sm"
           >
             <Plus className="w-4 h-4" />
             <span>Новая операция</span>
@@ -344,7 +357,9 @@ export function Transactions() {
                   >
                     <option value="all">Все счета ({accounts.length})</option>
                     {accounts.map(a => (
-                      <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>
+                      <option key={a.id} value={a.id}>
+                        {a.name} ({a.balance} {CURRENCY_SYMBOLS[a.currency] || a.currency})
+                      </option>
                     ))}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mono-500 pointer-events-none" />
@@ -445,7 +460,7 @@ export function Transactions() {
         )}
       </div>
 
-      {/* Table Container */}
+      {/* Table Container with Virtual Scrolling */}
       <div className="flex-1 bg-mono-50 border border-mono-200 rounded-none overflow-hidden flex flex-col min-h-0">
         {isLoading ? (
           <div className="flex-1 flex flex-col items-center justify-center text-mono-500 py-16">
@@ -471,19 +486,27 @@ export function Transactions() {
             )}
           </div>
         ) : (
-          <div className="overflow-auto flex-1">
-            <table className="w-full text-left border-collapse">
-              <thead className="sticky top-0 bg-mono-100 z-10">
-                <tr className="border-b border-mono-200 text-xs font-semibold uppercase tracking-wider text-mono-500">
-                  <th className="py-3 px-4">Дата</th>
-                  <th className="py-3 px-4">Описание</th>
-                  <th className="py-3 px-4">Категория</th>
-                  <th className="py-3 px-4">Счет</th>
-                  <th className="py-3 px-4 text-right">Сумма</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-mono-200/70 bg-mono-50">
-                {filteredOperations.map(op => {
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* Sticky Table Header */}
+            <div className="bg-mono-100 border-b border-mono-200 text-xs font-semibold uppercase tracking-wider text-mono-500 grid grid-cols-12 px-4 py-3 items-center select-none shrink-0">
+              <div className="col-span-2">Дата</div>
+              <div className="col-span-4">Описание</div>
+              <div className="col-span-2">Категория</div>
+              <div className="col-span-2">Счет</div>
+              <div className="col-span-2 text-right">Сумма</div>
+            </div>
+
+            {/* Virtualized Scrollable Rows Container */}
+            <div ref={parentRef} className="overflow-auto flex-1 relative bg-mono-50">
+              <div
+                style={{
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  width: '100%',
+                  position: 'relative',
+                }}
+              >
+                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const op = filteredOperations[virtualRow.index];
                   const category = categoryMap.get(op.category_id);
                   const account = accountMap.get(op.account_id);
                   const isIncome = op.type === 'income';
@@ -491,40 +514,42 @@ export function Transactions() {
                   const currencySymbol = account ? CURRENCY_SYMBOLS[account.currency] || account.currency : '₽';
 
                   return (
-                    <tr 
-                      key={op.id} 
+                    <div
+                      key={op.id}
                       onClick={() => handleEdit(op)}
-                      className="hover:bg-mono-100 transition-colors cursor-pointer group"
+                      className="hover:bg-mono-100 transition-colors cursor-pointer group absolute top-0 left-0 w-full grid grid-cols-12 px-4 py-3 items-center border-b border-mono-200/70 text-sm"
+                      style={{
+                        height: `${virtualRow.size}px`,
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
                     >
-                      <td className="py-3 px-4 text-xs font-mono text-mono-500 whitespace-nowrap">
+                      <div className="col-span-2 text-xs font-mono text-mono-500 whitespace-nowrap">
                         {formatDate(op.date)}
-                      </td>
-                      <td className="py-3 px-4 font-medium text-mono-900 text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className={`p-1 rounded-none ${isIncome ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
-                            {isIncome ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                          </span>
-                          <span>{op.description}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-mono-200 text-mono-700">
+                      </div>
+                      <div className="col-span-4 font-medium text-mono-900 flex items-center gap-2 min-w-0 pr-2">
+                        <span className={`p-1 rounded-none flex-shrink-0 ${isIncome ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
+                          {isIncome ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+                        </span>
+                        <span className="truncate">{op.description}</span>
+                      </div>
+                      <div className="col-span-2 whitespace-nowrap truncate pr-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-mono-200 text-mono-700 truncate max-w-full">
                           {category?.name || 'Без категории'}
                         </span>
-                      </td>
-                      <td className="py-3 px-4 text-xs text-mono-600 whitespace-nowrap">
+                      </div>
+                      <div className="col-span-2 text-xs text-mono-600 whitespace-nowrap truncate pr-2">
                         {account?.name || 'Счет удален'}
-                      </td>
-                      <td className={`py-3 px-4 text-right font-mono font-semibold text-sm whitespace-nowrap ${
+                      </div>
+                      <div className={`col-span-2 text-right font-mono font-semibold text-sm whitespace-nowrap ${
                         isIncome ? 'text-emerald-600' : 'text-mono-900'
                       }`}>
                         {isIncome ? '+' : '-'}{amountNum.toLocaleString('ru-RU', { minimumFractionDigits: 2 })} {currencySymbol}
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -559,7 +584,7 @@ export function Transactions() {
                   }}
                   className={`flex-1 py-1.5 text-xs font-semibold rounded transition-colors ${
                     formData.type === 'expense'
-                      ? 'bg-mono-50 text-mono-900 '
+                      ? 'bg-mono-50 text-mono-900'
                       : 'text-mono-500 hover:text-mono-800'
                   }`}
                 >
@@ -576,7 +601,7 @@ export function Transactions() {
                   }}
                   className={`flex-1 py-1.5 text-xs font-semibold rounded transition-colors ${
                     formData.type === 'income'
-                      ? 'bg-mono-50 text-mono-900 '
+                      ? 'bg-mono-50 text-mono-900'
                       : 'text-mono-500 hover:text-mono-800'
                   }`}
                 >

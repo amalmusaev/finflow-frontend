@@ -133,7 +133,7 @@ export function Chat() {
       const [accRes, catRes, opRes] = await Promise.all([
         api.accounts.getAccounts().catch(() => ({ accounts: [] })),
         api.categories.getCategories().catch(() => ({ categories: [] })),
-        api.operations.getOperations().catch(() => ({ operations: [] })),
+        api.operations.getAllOperations().catch(() => ({ operations: [] })),
       ]);
 
       const loadedAccs = accRes.accounts && accRes.accounts.length > 0

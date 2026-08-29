@@ -57,7 +57,7 @@ export function Dashboard() {
       setError(null);
 
       const [opsRes, accsRes, catsRes] = await Promise.all([
-        api.operations.getOperations(),
+        api.operations.getAllOperations(),
         api.accounts.getAccounts(),
         api.categories.getCategories(),
       ]);
