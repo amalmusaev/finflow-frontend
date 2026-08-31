@@ -4,7 +4,6 @@ import { Dashboard } from './pages/Dashboard'
 import { Transactions } from './pages/Transactions'
 import { Accounts } from './pages/Accounts'
 import { Settings } from './pages/Settings'
-import { Chat } from './pages/Chat'
 
 export default function App() {
   return (
@@ -14,7 +13,6 @@ export default function App() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="transactions" element={<Transactions />} />
         <Route path="accounts" element={<Accounts />} />
-        <Route path="chat" element={<Chat />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Wallet, ArrowLeftRight, Settings as SettingsIcon, PanelLeftClose, Sparkles, BarChart3 } from 'lucide-react';
+import { Wallet, ArrowLeftRight, Settings as SettingsIcon, PanelLeftClose, BarChart3 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { isMockMode } from '../api';
 import { Logo } from './Logo';
@@ -20,7 +20,6 @@ export function Layout() {
     { name: 'Дашборд', path: '/dashboard', icon: BarChart3 },
     { name: 'Операции', path: '/', icon: ArrowLeftRight },
     { name: 'Счета', path: '/accounts', icon: Wallet },
-    { name: 'ИИ-Ассистент', path: '/chat', icon: Sparkles },
     { name: 'Настройки', path: '/settings', icon: SettingsIcon },
   ];
 
