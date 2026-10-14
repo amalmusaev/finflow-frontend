@@ -1,8 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Plus, X, Trash2, Loader2, AlertCircle, RefreshCw, Landmark, ChevronDown } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { 
+  Plus, X, Trash2, Loader2, AlertCircle, RefreshCw, Landmark, ChevronDown, 
+  ArrowLeftRight, Banknote, Coins, GripVertical, ChevronLeft, ChevronRight 
+} from 'lucide-react';
 import { api } from '../api';
 import type { Account, AccountType, Currency } from '../api';
-import { ACCOUNT_TYPE_LABELS, CURRENCY_SYMBOLS, formatCurrency } from '../lib/utils';
+import { 
+  ACCOUNT_TYPE_LABELS, CURRENCY_SYMBOLS, formatCurrency, cn,
+  saveAccountsOrder 
+} from '../lib/utils';
+import { TransferModal, type TransferMode } from '../components/transfers/TransferModal';
 
 const AVAILABLE_CURRENCIES: Currency[] = ['RUB', 'USD', 'EUR', 'BYN', 'KZT', 'CNY'];
 const AVAILABLE_TYPES: AccountType[] = ['card', 'bank', 'cash', 'deposit'];
@@ -12,6 +19,11 @@ export function Accounts() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Drag-and-drop & reordering state
+  const [draggedAccountId, setDraggedAccountId] = useState<string | null>(null);
+  const [dragOverAccountId, setDragOverAccountId] = useState<string | null>(null);
+  const isDraggingRef = useRef(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
@@ -28,6 +40,11 @@ export function Accounts() {
     currency: 'RUB',
     is_active: true,
   });
+
+  // Transfer modal state
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [transferFromAccountId, setTransferFromAccountId] = useState<string | undefined>();
+  const [transferMode, setTransferMode] = useState<TransferMode>('transfer');
 
   const loadAccounts = useCallback(async () => {
     try {
@@ -46,7 +63,76 @@ export function Accounts() {
     loadAccounts();
   }, [loadAccounts]);
 
+  const handleDragStart = (e: React.DragEvent, account: Account) => {
+    isDraggingRef.current = true;
+    setDraggedAccountId(account.id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', account.id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, targetAccount: Account) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (!draggedAccountId || draggedAccountId === targetAccount.id) return;
+    if (dragOverAccountId !== targetAccount.id) {
+      setDragOverAccountId(targetAccount.id);
+    }
+  };
+
+  const handleDragLeave = (_e: React.DragEvent, targetAccount: Account) => {
+    if (dragOverAccountId === targetAccount.id) {
+      setDragOverAccountId(null);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetAccount: Account) => {
+    e.preventDefault();
+    if (!draggedAccountId || draggedAccountId === targetAccount.id) {
+      setDraggedAccountId(null);
+      setDragOverAccountId(null);
+      return;
+    }
+
+    setAccounts(prev => {
+      const fromIndex = prev.findIndex(a => a.id === draggedAccountId);
+      const toIndex = prev.findIndex(a => a.id === targetAccount.id);
+      if (fromIndex === -1 || toIndex === -1) return prev;
+
+      const updated = [...prev];
+      const [moved] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, moved);
+      saveAccountsOrder(updated.map(a => a.id));
+      return updated;
+    });
+
+    setDraggedAccountId(null);
+    setDragOverAccountId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedAccountId(null);
+    setDragOverAccountId(null);
+    setTimeout(() => {
+      isDraggingRef.current = false;
+    }, 50);
+  };
+
+  const handleMoveCard = (index: number, direction: 'prev' | 'next', e: React.MouseEvent) => {
+    e.stopPropagation();
+    const targetIndex = direction === 'prev' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= accounts.length) return;
+
+    setAccounts(prev => {
+      const updated = [...prev];
+      const [moved] = updated.splice(index, 1);
+      updated.splice(targetIndex, 0, moved);
+      saveAccountsOrder(updated.map(a => a.id));
+      return updated;
+    });
+  };
+
   const handleEdit = (account: Account) => {
+    if (isDraggingRef.current) return;
     setEditingAccount(account);
     setFormData({
       name: account.name,
@@ -77,7 +163,11 @@ export function Accounts() {
     try {
       setIsSaving(true);
       await api.accounts.deleteAccount(editingAccount.id);
-      setAccounts(prev => prev.filter(a => a.id !== editingAccount.id));
+      setAccounts(prev => {
+        const updated = prev.filter(a => a.id !== editingAccount.id);
+        saveAccountsOrder(updated.map(a => a.id));
+        return updated;
+      });
       setIsModalOpen(false);
     } catch (err: any) {
       alert(`Не удалось удалить счет: ${err.message}`);
@@ -105,7 +195,11 @@ export function Accounts() {
           currency: formData.currency,
           balance: parseFloat(formData.balance) || 0,
         });
-        setAccounts(prev => [created, ...prev]);
+        setAccounts(prev => {
+          const updated = [created, ...prev];
+          saveAccountsOrder(updated.map(a => a.id));
+          return updated;
+        });
       }
       setIsModalOpen(false);
     } catch (err: any) {
@@ -129,12 +223,13 @@ export function Accounts() {
           <h1 className="text-3xl font-semibold text-mono-900 tracking-tight mb-1">Счета</h1>
           <div className="flex flex-wrap items-center gap-3 text-sm text-mono-500">
             <span>Всего счетов: <strong className="font-mono text-mono-800 font-medium">{accounts.length}</strong></span>
+            <span className="hidden md:inline text-xs text-mono-400 font-mono">(перетаскивайте карточки для изменения порядка)</span>
             {Object.keys(currencyTotals).length > 0 && (
               <>
                 <span className="text-mono-300">•</span>
                 <div className="flex flex-wrap items-center gap-2">
                   {Object.entries(currencyTotals).map(([curr, total]) => (
-                    <span key={curr} className="inline-flex items-center px-2 py-0.5 rounded bg-mono-200/70 text-mono-800 font-mono text-xs font-medium">
+                    <span key={curr} className="inline-flex items-center px-2 py-0.5 rounded-none bg-mono-200/70 text-mono-800 font-mono text-xs font-medium">
                       {total.toLocaleString('ru-RU', { minimumFractionDigits: 2 })} {CURRENCY_SYMBOLS[curr as Currency] || curr}
                     </span>
                   ))}
@@ -151,6 +246,17 @@ export function Accounts() {
             title="Обновить список счетов"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            onClick={() => {
+              setTransferFromAccountId(undefined);
+              setTransferMode('transfer');
+              setIsTransferModalOpen(true);
+            }}
+            className="flex items-center gap-2 border border-mono-200 bg-mono-100 hover:bg-mono-200 text-mono-900 px-3.5 py-2 rounded-none transition-colors font-medium text-sm"
+          >
+            <ArrowLeftRight className="w-4 h-4" />
+            <span>Перевод</span>
           </button>
           <button 
             onClick={handleCreate}
@@ -199,22 +305,49 @@ export function Accounts() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {accounts.map(account => {
+          {accounts.map((account, index) => {
             const balanceNum = parseFloat(account.balance) || 0;
+            const isBeingDragged = draggedAccountId === account.id;
+            const isDropTarget = dragOverAccountId === account.id;
 
             return (
               <div 
                 key={account.id} 
+                draggable
+                onDragStart={(e) => handleDragStart(e, account)}
+                onDragOver={(e) => handleDragOver(e, account)}
+                onDragLeave={(e) => handleDragLeave(e, account)}
+                onDrop={(e) => handleDrop(e, account)}
+                onDragEnd={handleDragEnd}
                 onClick={() => handleEdit(account)}
-                className={`bg-mono-50 border border-mono-200 rounded-none p-6 hover:border-mono-300 hover: transition-all cursor-pointer group flex flex-col justify-between ${!account.is_active ? 'opacity-60' : ''}`}
+                className={cn(
+                  "bg-mono-50 border rounded-none p-6 transition-all cursor-pointer group flex flex-col justify-between select-none relative",
+                  !account.is_active && "opacity-60",
+                  isBeingDragged
+                    ? "opacity-30 border-dashed border-mono-400 bg-mono-100 scale-[0.98]"
+                    : isDropTarget
+                    ? "border-mono-900 ring-2 ring-mono-900 bg-mono-100/60 shadow-lg"
+                    : "border-mono-200 hover:border-mono-400"
+                )}
               >
                 <div>
                   <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="text-base font-semibold text-mono-900 leading-snug">{account.name}</h3>
-                      <span className="text-xs text-mono-500">{ACCOUNT_TYPE_LABELS[account.type]}</span>
+                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                      <div 
+                        className="text-mono-400 hover:text-mono-900 p-0.5 cursor-grab active:cursor-grabbing transition-colors shrink-0"
+                        title="Потяните для изменения порядка карточки"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <GripVertical className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-base font-semibold text-mono-900 leading-snug truncate" title={account.name}>
+                          {account.name}
+                        </h3>
+                        <span className="text-xs text-mono-500 font-mono">{ACCOUNT_TYPE_LABELS[account.type]}</span>
+                      </div>
                     </div>
-                    <span className="text-xs font-mono font-medium text-mono-600 uppercase bg-mono-200 px-2 py-0.5 rounded">
+                    <span className="text-xs font-mono font-medium text-mono-600 uppercase bg-mono-200 px-2 py-0.5 rounded-none shrink-0">
                       {account.currency}
                     </span>
                   </div>
@@ -225,6 +358,80 @@ export function Accounts() {
                   <p className="text-xl font-mono font-semibold text-mono-900 tracking-tight">
                     {formatCurrency(balanceNum, account.currency)}
                   </p>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-mono-200/70 flex items-center justify-between">
+                  {/* Quick reorder arrows */}
+                  <div className="flex items-center gap-0.5">
+                    <button
+                      type="button"
+                      disabled={index === 0}
+                      onClick={(e) => handleMoveCard(index, 'prev', e)}
+                      className="p-1 text-mono-400 hover:text-mono-900 hover:bg-mono-200 disabled:opacity-20 disabled:hover:bg-transparent rounded-none transition-colors border border-transparent hover:border-mono-300"
+                      title="Переместить счет левее"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={index === accounts.length - 1}
+                      onClick={(e) => handleMoveCard(index, 'next', e)}
+                      className="p-1 text-mono-400 hover:text-mono-900 hover:bg-mono-200 disabled:opacity-20 disabled:hover:bg-transparent rounded-none transition-colors border border-transparent hover:border-mono-300"
+                      title="Переместить счет правее"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Transfer / Cash Actions */}
+                  <div className="flex items-center gap-1.5 justify-end">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTransferFromAccountId(account.id);
+                        setTransferMode('transfer');
+                        setIsTransferModalOpen(true);
+                      }}
+                      className="px-2 py-1 text-xs font-mono font-medium text-mono-600 hover:text-mono-900 hover:bg-mono-200 rounded-none transition-colors flex items-center gap-1 border border-transparent hover:border-mono-300"
+                      title="Перевести с этого счета"
+                    >
+                      <ArrowLeftRight className="w-3 h-3" />
+                      <span>Перевести</span>
+                    </button>
+
+                    {account.type !== 'cash' ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTransferFromAccountId(account.id);
+                          setTransferMode('withdrawal');
+                          setIsTransferModalOpen(true);
+                        }}
+                        className="px-2 py-1 text-xs font-mono font-medium text-mono-600 hover:text-mono-900 hover:bg-mono-200 rounded-none transition-colors flex items-center gap-1 border border-transparent hover:border-mono-300"
+                        title="Снять наличные с этого счета"
+                      >
+                        <Banknote className="w-3 h-3" />
+                        <span>Снять нал</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTransferFromAccountId(account.id);
+                          setTransferMode('deposit');
+                          setIsTransferModalOpen(true);
+                        }}
+                        className="px-2 py-1 text-xs font-mono font-medium text-mono-600 hover:text-mono-900 hover:bg-mono-200 rounded-none transition-colors flex items-center gap-1 border border-transparent hover:border-mono-300"
+                        title="Внести наличные на счет/карту"
+                      >
+                        <Coins className="w-3 h-3" />
+                        <span>Внести на карту</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -241,7 +448,7 @@ export function Accounts() {
               </h2>
               <button 
                 onClick={() => !isSaving && setIsModalOpen(false)} 
-                className="text-mono-500 hover:text-mono-900 transition-colors p-1 rounded"
+                className="text-mono-500 hover:text-mono-900 transition-colors p-1 rounded-none"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -321,7 +528,7 @@ export function Accounts() {
                     id="is_active"
                     checked={formData.is_active}
                     onChange={e => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
-                    className="w-4 h-4 rounded border-mono-300 text-mono-900 focus:ring-mono-400"
+                    className="w-4 h-4 rounded-none border-mono-300 text-mono-900 focus:ring-mono-400"
                   />
                   <label htmlFor="is_active" className="text-sm font-medium text-mono-800 cursor-pointer">
                     Счет активен
@@ -366,6 +573,17 @@ export function Accounts() {
           </div>
         </div>
       )}
+
+      {/* Transfer Modal */}
+      <TransferModal
+        isOpen={isTransferModalOpen}
+        onClose={() => setIsTransferModalOpen(false)}
+        onSuccess={loadAccounts}
+        accounts={accounts}
+        initialFromAccountId={transferFromAccountId}
+        initialMode={transferMode}
+      />
     </div>
   );
 }
+

@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Search, Filter, Plus, X, Trash2, ChevronDown, Loader2, AlertCircle, RefreshCw, ArrowDownRight, ArrowUpRight, Calendar, RotateCcw } from 'lucide-react';
+import { Search, Filter, Plus, X, Trash2, ChevronDown, Loader2, AlertCircle, RefreshCw, ArrowDownRight, ArrowUpRight, ArrowLeftRight, Calendar, RotateCcw } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { api } from '../api';
-import type { Operation, Account, Category, OperationType } from '../api';
+import type { Operation, Account, Category, OperationType, Transfer, ActivityItem } from '../api';
 import { CURRENCY_SYMBOLS, formatDate } from '../lib/utils';
+import { TransferModal } from '../components/transfers/TransferModal';
 
 export function Transactions() {
   const [operations, setOperations] = useState<Operation[]>([]);
+  const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
@@ -18,7 +20,7 @@ export function Transactions() {
   const [search, setSearch] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState<{
-    type: 'all' | OperationType;
+    type: 'all' | OperationType | 'transfer';
     accountId: string;
     categoryId: string;
     startDate: string;
@@ -31,7 +33,7 @@ export function Transactions() {
     endDate: '',
   });
 
-  // Modal & Form State
+  // Modal & Form State for Operations
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOperation, setEditingOperation] = useState<Operation | null>(null);
   const [formData, setFormData] = useState<{
@@ -50,6 +52,10 @@ export function Transactions() {
     accountId: '',
   });
 
+  // Modal State for Transfers
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [editingTransfer, setEditingTransfer] = useState<Transfer | null>(null);
+
   const parentRef = useRef<HTMLDivElement>(null);
 
   const loadData = useCallback(async () => {
@@ -57,13 +63,15 @@ export function Transactions() {
       setIsLoading(true);
       setError(null);
 
-      const [opsRes, accsRes, catsRes] = await Promise.all([
+      const [opsRes, trsRes, accsRes, catsRes] = await Promise.all([
         api.operations.getAllOperations(),
+        api.transfers.getAllTransfers(),
         api.accounts.getAccounts(),
         api.categories.getCategories(),
       ]);
 
       setOperations(opsRes.operations || []);
+      setTransfers(trsRes.transfers || []);
       setAccounts(accsRes.accounts || []);
       setCategories(catsRes.categories || []);
     } catch (err: any) {
@@ -76,27 +84,6 @@ export function Transactions() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  // Filtered operations
-  const filteredOperations = useMemo(() => {
-    return operations.filter(op => {
-      const matchesSearch = !search || op.description.toLowerCase().includes(search.toLowerCase());
-      const matchesType = filters.type === 'all' || op.type === filters.type;
-      const matchesAccount = filters.accountId === 'all' || op.account_id === filters.accountId;
-      const matchesCategory = filters.categoryId === 'all' || op.category_id === filters.categoryId;
-      const matchesStartDate = !filters.startDate || op.date >= filters.startDate;
-      const matchesEndDate = !filters.endDate || op.date <= filters.endDate;
-      return matchesSearch && matchesType && matchesAccount && matchesCategory && matchesStartDate && matchesEndDate;
-    });
-  }, [operations, search, filters]);
-
-  // Virtualizer for high-performance rendering of huge datasets
-  const rowVirtualizer = useVirtualizer({
-    count: filteredOperations.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 52,
-    overscan: 15,
-  });
 
   // Account map for quick lookup
   const accountMap = useMemo(() => {
@@ -111,6 +98,54 @@ export function Transactions() {
     categories.forEach(c => map.set(c.id, c));
     return map;
   }, [categories]);
+
+  // Unified list of operations and transfers
+  const allActivities = useMemo<ActivityItem[]>(() => {
+    const ops: ActivityItem[] = operations.map(o => ({ ...o, itemType: 'operation' as const }));
+    const trs: ActivityItem[] = transfers.map(t => ({ ...t, itemType: 'transfer' as const }));
+    return [...ops, ...trs].sort((a, b) => b.date.localeCompare(a.date));
+  }, [operations, transfers]);
+
+  // Filtered activities
+  const filteredActivities = useMemo(() => {
+    return allActivities.filter(item => {
+      const isOp = item.itemType === 'operation';
+      const fromAcc = !isOp ? accountMap.get(item.from_account_id) : undefined;
+      const toAcc = !isOp ? accountMap.get(item.to_account_id) : undefined;
+
+      const matchesSearch = !search || (
+        (item.description || '').toLowerCase().includes(search.toLowerCase()) ||
+        (!isOp && (
+          (fromAcc?.name || '').toLowerCase().includes(search.toLowerCase()) ||
+          (toAcc?.name || '').toLowerCase().includes(search.toLowerCase())
+        ))
+      );
+
+      const matchesType = filters.type === 'all' || (isOp ? item.type === filters.type : filters.type === 'transfer');
+
+      const matchesAccount = filters.accountId === 'all' || (
+        isOp ? item.account_id === filters.accountId : (item.from_account_id === filters.accountId || item.to_account_id === filters.accountId)
+      );
+
+      const matchesCategory = filters.categoryId === 'all' || (
+        isOp && item.category_id === filters.categoryId
+      );
+
+      const matchesStartDate = !filters.startDate || item.date >= filters.startDate;
+      const matchesEndDate = !filters.endDate || item.date <= filters.endDate;
+
+      return matchesSearch && matchesType && matchesAccount && matchesCategory && matchesStartDate && matchesEndDate;
+    });
+  }, [allActivities, search, filters, accountMap]);
+
+  // Virtualizer for high-performance rendering of huge datasets
+  const rowVirtualizer = useVirtualizer({
+    count: filteredActivities.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 52,
+    overscan: 15,
+  });
+
 
   const handleDatePreset = (preset: 'all' | 'today' | '7days' | '30days' | 'month') => {
     const now = new Date();
@@ -257,7 +292,7 @@ export function Transactions() {
         <div>
           <h1 className="text-3xl font-semibold text-mono-900 tracking-tight">Операции</h1>
           <p className="text-xs text-mono-500 mt-1">
-            Всего операций: <span className="font-mono font-semibold text-mono-900">{filteredOperations.length}</span>
+            Всего записей: <span className="font-mono font-semibold text-mono-900">{filteredActivities.length}</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -268,6 +303,16 @@ export function Transactions() {
             title="Обновить список"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            onClick={() => {
+              setEditingTransfer(null);
+              setIsTransferModalOpen(true);
+            }}
+            className="flex items-center gap-2 border border-mono-200 bg-mono-100 hover:bg-mono-200 text-mono-900 px-3.5 py-2 rounded-none transition-colors font-medium text-sm"
+          >
+            <ArrowLeftRight className="w-4 h-4" />
+            <span>Перевод</span>
           </button>
           <button 
             onClick={handleCreate}
@@ -301,10 +346,10 @@ export function Transactions() {
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-mono-400" />
             <input
               type="text"
-              placeholder="Поиск по описанию..."
+              placeholder="Поиск по описанию или счету..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 placeholder:text-mono-400 text-sm"
+              className="w-full pl-10 pr-4 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 focus:ring-1 focus:ring-mono-400 text-mono-900 placeholder:text-mono-400 text-sm font-mono"
             />
           </div>
           <button 
@@ -332,23 +377,24 @@ export function Transactions() {
             {/* Main filter selectors */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-mono-600 mb-1.5 uppercase tracking-wider">Тип операции</label>
+                <label className="block text-xs font-semibold text-mono-600 mb-1.5 uppercase tracking-wider font-mono">Тип записи</label>
                 <div className="relative">
                   <select
                     value={filters.type}
                     onChange={e => setFilters(prev => ({ ...prev, type: e.target.value as any }))}
                     className="w-full appearance-none pl-3 pr-10 py-2 bg-mono-50 border border-mono-200 rounded-none focus:outline-none focus:border-mono-400 text-mono-900 text-sm cursor-pointer"
                   >
-                    <option value="all">Все типы</option>
+                    <option value="all">Все записи</option>
                     <option value="expense">Расходы</option>
                     <option value="income">Доходы</option>
+                    <option value="transfer">Переводы между счетами</option>
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mono-500 pointer-events-none" />
                 </div>
               </div>
               
               <div>
-                <label className="block text-xs font-semibold text-mono-600 mb-1.5 uppercase tracking-wider">Счет</label>
+                <label className="block text-xs font-semibold text-mono-600 mb-1.5 uppercase tracking-wider font-mono">Счет</label>
                 <div className="relative">
                   <select
                     value={filters.accountId}
@@ -367,7 +413,7 @@ export function Transactions() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-mono-600 mb-1.5 uppercase tracking-wider">Категория</label>
+                <label className="block text-xs font-semibold text-mono-600 mb-1.5 uppercase tracking-wider font-mono">Категория</label>
                 <div className="relative">
                   <select
                     value={filters.categoryId}
@@ -391,7 +437,7 @@ export function Transactions() {
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-1.5">
                   <Calendar className="w-4 h-4 text-mono-500 flex-shrink-0" />
-                  <span className="text-xs font-semibold text-mono-600 uppercase tracking-wider">Период:</span>
+                  <span className="text-xs font-semibold text-mono-600 uppercase tracking-wider font-mono">Период:</span>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -417,28 +463,28 @@ export function Transactions() {
                   <button
                     type="button"
                     onClick={() => handleDatePreset('today')}
-                    className="px-2 py-1 rounded bg-mono-200/70 hover:bg-mono-200 text-mono-700 text-xs font-medium transition-colors"
+                    className="px-2.5 py-1 rounded-none border border-mono-200 bg-mono-100 hover:bg-mono-200 text-mono-800 text-xs font-mono transition-colors"
                   >
                     Сегодня
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDatePreset('7days')}
-                    className="px-2 py-1 rounded bg-mono-200/70 hover:bg-mono-200 text-mono-700 text-xs font-medium transition-colors"
+                    className="px-2.5 py-1 rounded-none border border-mono-200 bg-mono-100 hover:bg-mono-200 text-mono-800 text-xs font-mono transition-colors"
                   >
                     7 дней
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDatePreset('30days')}
-                    className="px-2 py-1 rounded bg-mono-200/70 hover:bg-mono-200 text-mono-700 text-xs font-medium transition-colors"
+                    className="px-2.5 py-1 rounded-none border border-mono-200 bg-mono-100 hover:bg-mono-200 text-mono-800 text-xs font-mono transition-colors"
                   >
                     30 дней
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDatePreset('month')}
-                    className="px-2 py-1 rounded bg-mono-200/70 hover:bg-mono-200 text-mono-700 text-xs font-medium transition-colors"
+                    className="px-2.5 py-1 rounded-none border border-mono-200 bg-mono-100 hover:bg-mono-200 text-mono-800 text-xs font-mono transition-colors"
                   >
                     Этот месяц
                   </button>
@@ -465,24 +511,36 @@ export function Transactions() {
         {isLoading ? (
           <div className="flex-1 flex flex-col items-center justify-center text-mono-500 py-16">
             <Loader2 className="w-8 h-8 animate-spin text-mono-400 mb-3" />
-            <p className="text-sm">Загрузка операций...</p>
+            <p className="text-sm">Загрузка данных...</p>
           </div>
-        ) : filteredOperations.length === 0 ? (
+        ) : filteredActivities.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-mono-500 py-16 px-4">
-            <p className="text-sm font-medium text-mono-700 mb-1">Операций не найдено</p>
+            <p className="text-sm font-medium text-mono-700 mb-1">Записей не найдено</p>
             <p className="text-xs text-mono-400 mb-4 text-center">
-              {operations.length === 0 
-                ? 'Добавьте первую операцию дохода или расхода.' 
+              {allActivities.length === 0 
+                ? 'Добавьте первую операцию дохода/расхода или выполните перевод между счетами.' 
                 : 'Попробуйте сбросить параметры фильтрации или поисковый запрос.'}
             </p>
-            {operations.length === 0 && (
-              <button 
-                onClick={handleCreate}
-                className="flex items-center gap-2 bg-mono-900 text-mono-50 px-4 py-2 rounded-none hover:bg-mono-800 transition-colors text-sm font-medium"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Добавить операцию</span>
-              </button>
+            {allActivities.length === 0 && (
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={handleCreate}
+                  className="flex items-center gap-2 bg-mono-900 text-mono-50 px-4 py-2 rounded-none hover:bg-mono-800 transition-colors text-sm font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Новая операция</span>
+                </button>
+                <button 
+                  onClick={() => {
+                    setEditingTransfer(null);
+                    setIsTransferModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 border border-mono-300 bg-mono-100 hover:bg-mono-200 text-mono-900 px-4 py-2 rounded-none transition-colors text-sm font-medium"
+                >
+                  <ArrowLeftRight className="w-4 h-4" />
+                  <span>Перевод</span>
+                </button>
+              </div>
             )}
           </div>
         ) : (
@@ -506,17 +564,71 @@ export function Transactions() {
                 }}
               >
                 {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                  const op = filteredOperations[virtualRow.index];
-                  const category = categoryMap.get(op.category_id);
-                  const account = accountMap.get(op.account_id);
-                  const isIncome = op.type === 'income';
-                  const amountNum = parseFloat(op.amount) || 0;
-                  const currencySymbol = account ? CURRENCY_SYMBOLS[account.currency] || account.currency : '₽';
+                  const item = filteredActivities[virtualRow.index];
+                  const isOp = item.itemType === 'operation';
+
+                  if (isOp) {
+                    const op = item;
+                    const category = categoryMap.get(op.category_id);
+                    const account = accountMap.get(op.account_id);
+                    const isIncome = op.type === 'income';
+                    const amountNum = parseFloat(op.amount) || 0;
+                    const currencySymbol = account ? CURRENCY_SYMBOLS[account.currency] || account.currency : '₽';
+
+                    return (
+                      <div
+                        key={op.id}
+                        onClick={() => handleEdit(op)}
+                        className="hover:bg-mono-100 transition-colors cursor-pointer group absolute top-0 left-0 w-full grid grid-cols-12 px-4 py-3 items-center border-b border-mono-200/70 text-sm"
+                        style={{
+                          height: `${virtualRow.size}px`,
+                          transform: `translateY(${virtualRow.start}px)`,
+                        }}
+                      >
+                        <div className="col-span-2 text-xs font-mono text-mono-500 whitespace-nowrap">
+                          {formatDate(op.date)}
+                        </div>
+                        <div className="col-span-4 font-medium text-mono-900 flex items-center gap-2 min-w-0 pr-2">
+                          <span className={`p-1 rounded-none flex-shrink-0 ${isIncome ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
+                            {isIncome ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+                          </span>
+                          <span className="truncate">{op.description}</span>
+                        </div>
+                        <div className="col-span-2 whitespace-nowrap truncate pr-2">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-none text-xs font-medium bg-mono-200 text-mono-700 truncate max-w-full">
+                            {category?.name || 'Без категории'}
+                          </span>
+                        </div>
+                        <div className="col-span-2 text-xs text-mono-600 whitespace-nowrap truncate pr-2">
+                          {account?.name || 'Счет удален'}
+                        </div>
+                        <div className={`col-span-2 text-right font-mono font-semibold text-sm whitespace-nowrap ${
+                          isIncome ? 'text-emerald-600' : 'text-mono-900'
+                        }`}>
+                          {isIncome ? '+' : '-'}{amountNum.toLocaleString('ru-RU', { minimumFractionDigits: 2 })} {currencySymbol}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // Transfer Row
+                  const tr = item;
+                  const fromAcc = accountMap.get(tr.from_account_id);
+                  const toAcc = accountMap.get(tr.to_account_id);
+                  const amountNum = parseFloat(tr.amount) || 0;
+                  const toAmountNum = parseFloat(tr.to_amount) || amountNum;
+                  const fromCurrSymbol = fromAcc ? CURRENCY_SYMBOLS[fromAcc.currency] || fromAcc.currency : '₽';
+                  const toCurrSymbol = toAcc ? CURRENCY_SYMBOLS[toAcc.currency] || toAcc.currency : '₽';
+                  const isCross = fromAcc && toAcc && fromAcc.currency !== toAcc.currency;
+                  const feeNum = parseFloat(tr.fee || '0') || 0;
 
                   return (
                     <div
-                      key={op.id}
-                      onClick={() => handleEdit(op)}
+                      key={tr.id}
+                      onClick={() => {
+                        setEditingTransfer(tr);
+                        setIsTransferModalOpen(true);
+                      }}
                       className="hover:bg-mono-100 transition-colors cursor-pointer group absolute top-0 left-0 w-full grid grid-cols-12 px-4 py-3 items-center border-b border-mono-200/70 text-sm"
                       style={{
                         height: `${virtualRow.size}px`,
@@ -524,26 +636,44 @@ export function Transactions() {
                       }}
                     >
                       <div className="col-span-2 text-xs font-mono text-mono-500 whitespace-nowrap">
-                        {formatDate(op.date)}
+                        {formatDate(tr.date)}
                       </div>
                       <div className="col-span-4 font-medium text-mono-900 flex items-center gap-2 min-w-0 pr-2">
-                        <span className={`p-1 rounded-none flex-shrink-0 ${isIncome ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
-                          {isIncome ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+                        <span className="p-1 rounded-none flex-shrink-0 bg-mono-200 text-mono-700">
+                          <ArrowLeftRight className="w-3.5 h-3.5" />
                         </span>
-                        <span className="truncate">{op.description}</span>
+                        <div className="min-w-0 flex flex-col">
+                          <span className="truncate">{tr.description || 'Перевод между счетами'}</span>
+                          <span className="text-[11px] text-mono-500 font-normal truncate">
+                            {fromAcc?.name || 'Счет'} → {toAcc?.name || 'Счет'}
+                          </span>
+                        </div>
                       </div>
                       <div className="col-span-2 whitespace-nowrap truncate pr-2">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-mono-200 text-mono-700 truncate max-w-full">
-                          {category?.name || 'Без категории'}
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-none text-xs font-mono font-medium bg-mono-200 text-mono-800 border border-mono-300 truncate max-w-full">
+                          Перевод
                         </span>
                       </div>
-                      <div className="col-span-2 text-xs text-mono-600 whitespace-nowrap truncate pr-2">
-                        {account?.name || 'Счет удален'}
+                      <div className="col-span-2 text-xs text-mono-600 whitespace-nowrap truncate pr-2" title={`${fromAcc?.name} → ${toAcc?.name}`}>
+                        {fromAcc?.name || '—'} → {toAcc?.name || '—'}
                       </div>
-                      <div className={`col-span-2 text-right font-mono font-semibold text-sm whitespace-nowrap ${
-                        isIncome ? 'text-emerald-600' : 'text-mono-900'
-                      }`}>
-                        {isIncome ? '+' : '-'}{amountNum.toLocaleString('ru-RU', { minimumFractionDigits: 2 })} {currencySymbol}
+                      <div className="col-span-2 text-right font-mono font-semibold text-sm whitespace-nowrap text-mono-900">
+                        <div>
+                          {isCross ? (
+                            <span>
+                              {amountNum.toLocaleString('ru-RU', { minimumFractionDigits: 2 })} {fromCurrSymbol} → {toAmountNum.toLocaleString('ru-RU', { minimumFractionDigits: 2 })} {toCurrSymbol}
+                            </span>
+                          ) : (
+                            <span>
+                              {amountNum.toLocaleString('ru-RU', { minimumFractionDigits: 2 })} {fromCurrSymbol}
+                            </span>
+                          )}
+                        </div>
+                        {feeNum > 0 && (
+                          <div className="text-[10px] text-mono-400 font-normal">
+                            +ком. {feeNum.toLocaleString('ru-RU', { minimumFractionDigits: 2 })} {fromCurrSymbol}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -582,7 +712,7 @@ export function Transactions() {
                       categoryId: categories.find(c => c.type === 'expense')?.id || prev.categoryId,
                     }));
                   }}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded transition-colors ${
+                  className={`flex-1 py-1.5 text-xs font-semibold rounded-none transition-colors ${
                     formData.type === 'expense'
                       ? 'bg-mono-50 text-mono-900'
                       : 'text-mono-500 hover:text-mono-800'
@@ -599,7 +729,7 @@ export function Transactions() {
                       categoryId: categories.find(c => c.type === 'income')?.id || prev.categoryId,
                     }));
                   }}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded transition-colors ${
+                  className={`flex-1 py-1.5 text-xs font-semibold rounded-none transition-colors ${
                     formData.type === 'income'
                       ? 'bg-mono-50 text-mono-900'
                       : 'text-mono-500 hover:text-mono-800'
@@ -607,6 +737,20 @@ export function Transactions() {
                 >
                   Доход
                 </button>
+                {!editingOperation && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setEditingTransfer(null);
+                      setIsTransferModalOpen(true);
+                    }}
+                    className="flex-1 py-1.5 text-xs font-semibold rounded-none transition-colors text-mono-500 hover:text-mono-900 flex items-center justify-center gap-1"
+                  >
+                    <ArrowLeftRight className="w-3 h-3" />
+                    <span>Перевод</span>
+                  </button>
+                )}
               </div>
 
               {/* Amount */}
@@ -726,6 +870,16 @@ export function Transactions() {
           </div>
         </div>
       )}
+
+      {/* Transfer Modal */}
+      <TransferModal
+        isOpen={isTransferModalOpen}
+        onClose={() => setIsTransferModalOpen(false)}
+        onSuccess={loadData}
+        accounts={accounts}
+        editingTransfer={editingTransfer}
+      />
     </div>
   );
 }
+

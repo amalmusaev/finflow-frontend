@@ -8,6 +8,7 @@ export interface TimelineDataPoint {
   income: number;
   expense: number;
   net: number;
+  transfers?: number;
 }
 
 export interface CategoryBreakdownItem {
@@ -177,7 +178,7 @@ export function BarTimelineChart({ data, height = 260 }: BarTimelineChartProps) 
                   height={chartHeight}
                   fill="currentColor"
                   className="text-mono-200/60"
-                  rx="4"
+                  rx="0"
                 />
               )}
 
@@ -188,7 +189,7 @@ export function BarTimelineChart({ data, height = 260 }: BarTimelineChartProps) 
                   y={incomeY}
                   width={incomeW}
                   height={Math.max(2, incomeHeight)}
-                  rx="3"
+                  rx="0"
                   fill="#10b981"
                   className="transition-all duration-150 pointer-events-none"
                   opacity={hoveredIdx === null || isHovered ? 1 : 0.4}
@@ -202,7 +203,7 @@ export function BarTimelineChart({ data, height = 260 }: BarTimelineChartProps) 
                   y={expenseY}
                   width={expenseW}
                   height={Math.max(2, expenseHeight)}
-                  rx="3"
+                  rx="0"
                   fill="#f43f5e"
                   className="transition-all duration-150 pointer-events-none"
                   opacity={hoveredIdx === null || isHovered ? 1 : 0.4}
@@ -259,6 +260,15 @@ export function BarTimelineChart({ data, height = 260 }: BarTimelineChartProps) 
               </span>
               <span className="font-medium">{formatCurrency(data[hoveredIdx].expense)}</span>
             </div>
+            {data[hoveredIdx].transfers !== undefined && data[hoveredIdx].transfers! > 0 && (
+              <div className="flex items-center justify-between gap-4">
+                <span className="flex items-center gap-1.5 text-mono-400">
+                  <span className="w-2 h-2 rounded-none bg-mono-400 inline-block" />
+                  Переводы:
+                </span>
+                <span className="font-medium text-mono-200">{formatCurrency(data[hoveredIdx].transfers!)}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between gap-4 pt-1 border-t border-mono-700/60 font-semibold">
               <span className="text-mono-300">Сальдо:</span>
               <span

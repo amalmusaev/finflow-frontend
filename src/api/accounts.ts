@@ -6,13 +6,17 @@ import type {
   AccountListResponse,
   AccountUpdate,
 } from './types';
+import { sortAccountsByOrder } from '../lib/utils';
 
 export const accountsApi = {
   async getAccounts(filters: AccountFilters = {}): Promise<AccountListResponse> {
-    return apiRequest<AccountListResponse>('/api/v1/accounts', {
+    const res = await apiRequest<AccountListResponse>('/api/v1/accounts', {
       method: 'GET',
       params: filters as Record<string, string | number | boolean | null | undefined>,
     });
+    return {
+      accounts: sortAccountsByOrder(res.accounts || []),
+    };
   },
 
   async getAccountById(accountId: string): Promise<Account> {

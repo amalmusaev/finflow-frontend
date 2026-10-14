@@ -124,3 +124,71 @@ export interface ApiErrorResponse {
   detail?: string | ApiValidationError[];
   message?: string;
 }
+
+export interface Transfer {
+  id: string;
+  from_account_id: string;
+  to_account_id: string;
+  amount: string;
+  to_amount: string;
+  fee: string;
+  date: string; // YYYY-MM-DD
+  description?: string | null;
+}
+
+export interface TransferCreate {
+  from_account_id: string;
+  to_account_id: string;
+  amount: number | string;
+  to_amount?: number | string | null;
+  fee?: number | string;
+  date: string;
+  description?: string | null;
+}
+
+export interface CashWithdrawalCreate {
+  from_account_id: string;
+  to_account_id?: string | null;
+  amount: number | string;
+  fee?: number | string;
+  date: string;
+  description?: string | null;
+}
+
+export interface CashDepositCreate {
+  to_account_id: string;
+  from_account_id?: string | null;
+  amount: number | string;
+  fee?: number | string;
+  date: string;
+  description?: string | null;
+}
+
+export interface TransferUpdate {
+  from_account_id?: string | null;
+  to_account_id?: string | null;
+  amount?: number | string | null;
+  to_amount?: number | string | null;
+  fee?: number | string | null;
+  date?: string | null;
+  description?: string | null;
+}
+
+export interface TransferListResponse {
+  transfers: Transfer[];
+}
+
+export interface TransferFilters {
+  account_id?: string | null;
+  from_account_id?: string | null;
+  to_account_id?: string | null;
+  from_date?: string | null;
+  to_date?: string | null;
+  limit?: number;
+  offset?: number;
+}
+
+export type ActivityItem =
+  | ({ itemType: 'operation' } & Operation)
+  | ({ itemType: 'transfer' } & Transfer);
+

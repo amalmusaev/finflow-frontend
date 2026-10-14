@@ -35,7 +35,7 @@ export function Layout() {
               <Logo className="h-9 w-9 flex-shrink-0" />
               <button 
                 onClick={() => setIsCollapsed(true)} 
-                className="p-1.5 text-mono-500 hover:text-mono-900 transition-colors rounded-md hover:bg-mono-100 cursor-pointer"
+                className="p-1.5 text-mono-500 hover:text-mono-900 transition-colors rounded-none hover:bg-mono-100 cursor-pointer"
                 title="Свернуть меню"
               >
                 <PanelLeftClose className="w-5 h-5" />
@@ -44,7 +44,7 @@ export function Layout() {
           ) : (
             <button 
               onClick={() => setIsCollapsed(false)} 
-              className="p-1 rounded-md hover:opacity-80 transition-opacity flex items-center justify-center cursor-pointer"
+              className="p-1 rounded-none hover:opacity-80 transition-opacity flex items-center justify-center cursor-pointer"
               title="Развернуть меню"
             >
               <Logo className="h-9 w-9 flex-shrink-0" />

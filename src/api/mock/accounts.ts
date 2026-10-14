@@ -6,6 +6,7 @@ import type {
   AccountUpdate,
 } from '../types';
 import { getMockAccounts, saveMockAccounts, delay } from './storage';
+import { sortAccountsByOrder } from '../../lib/utils';
 
 export const mockAccountsApi = {
   async getAccounts(filters: AccountFilters = {}): Promise<AccountListResponse> {
@@ -22,7 +23,7 @@ export const mockAccountsApi = {
       accounts = accounts.filter(a => a.currency === filters.currency);
     }
 
-    return { accounts };
+    return { accounts: sortAccountsByOrder(accounts) };
   },
 
   async getAccountById(accountId: string): Promise<Account> {

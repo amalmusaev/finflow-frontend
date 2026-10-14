@@ -5,6 +5,7 @@ import {
   TrendingDown,
   ArrowUpRight,
   ArrowDownRight,
+  ArrowLeftRight,
   ChevronRight,
   ChevronDown,
   Loader2,
@@ -12,7 +13,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { api } from '../api';
-import type { Operation, Account, Category } from '../api/types';
+import type { Operation, Account, Category, Transfer } from '../api/types';
 import { formatCurrency, formatDate, cn } from '../lib/utils';
 import {
   DateRangePicker,
@@ -31,6 +32,7 @@ import {
 
 export function Dashboard() {
   const [operations, setOperations] = useState<Operation[]>([]);
+  const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,13 +58,15 @@ export function Dashboard() {
       setIsLoading(true);
       setError(null);
 
-      const [opsRes, accsRes, catsRes] = await Promise.all([
+      const [opsRes, trsRes, accsRes, catsRes] = await Promise.all([
         api.operations.getAllOperations(),
+        api.transfers.getAllTransfers(),
         api.accounts.getAccounts(),
         api.categories.getCategories(),
       ]);
 
       setOperations(opsRes.operations || []);
+      setTransfers(trsRes.transfers || []);
       setAccounts(accsRes.accounts || []);
       setCategories(catsRes.categories || []);
     } catch (err: any) {
@@ -71,6 +75,7 @@ export function Dashboard() {
       setIsLoading(false);
     }
   }, []);
+
 
   useEffect(() => {
     loadData();
@@ -89,6 +94,31 @@ export function Dashboard() {
       return matchAccount && matchStart && matchEnd;
     });
   }, [operations, selectedAccountId, dateRange]);
+
+  // Filtered transfers for current period
+  const filteredTransfers = useMemo(() => {
+    return transfers.filter((tr) => {
+      const matchAccount =
+        selectedAccountId === 'all' ||
+        tr.from_account_id === selectedAccountId ||
+        tr.to_account_id === selectedAccountId;
+      const matchStart = !dateRange.startDate || tr.date >= dateRange.startDate;
+      const matchEnd = !dateRange.endDate || tr.date <= dateRange.endDate;
+      return matchAccount && matchStart && matchEnd;
+    });
+  }, [transfers, selectedAccountId, dateRange]);
+
+  const { totalTransfers, transfersCount } = useMemo(() => {
+    let sum = 0;
+    filteredTransfers.forEach((tr) => {
+      sum += Math.abs(parseFloat(tr.amount) || 0);
+    });
+    return {
+      totalTransfers: sum,
+      transfersCount: filteredTransfers.length,
+    };
+  }, [filteredTransfers]);
+
 
   // Previous period comparison calculation
   const previousPeriodMetrics = useMemo(() => {
@@ -199,21 +229,28 @@ export function Dashboard() {
 
   // Grouped Timeline Data
   const timelineData: TimelineDataPoint[] = useMemo(() => {
-    if (filteredOperations.length === 0) return [];
+    if (filteredOperations.length === 0 && filteredTransfers.length === 0) return [];
 
     // Map by date key
-    const dateMap = new Map<string, { income: number; expense: number }>();
+    const dateMap = new Map<string, { income: number; expense: number; transfers: number }>();
     const sortedOps = [...filteredOperations].sort((a, b) => a.date.localeCompare(b.date));
 
     sortedOps.forEach((op) => {
       const amt = Math.abs(parseFloat(op.amount) || 0);
-      const current = dateMap.get(op.date) || { income: 0, expense: 0 };
+      const current = dateMap.get(op.date) || { income: 0, expense: 0, transfers: 0 };
       if (op.type === 'income') {
         current.income += amt;
       } else {
         current.expense += amt;
       }
       dateMap.set(op.date, current);
+    });
+
+    filteredTransfers.forEach((tr) => {
+      const amt = Math.abs(parseFloat(tr.amount) || 0);
+      const current = dateMap.get(tr.date) || { income: 0, expense: 0, transfers: 0 };
+      current.transfers += amt;
+      dateMap.set(tr.date, current);
     });
 
     const result: TimelineDataPoint[] = [];
@@ -229,11 +266,13 @@ export function Dashboard() {
         income: val.income,
         expense: val.expense,
         net: val.income - val.expense,
+        transfers: val.transfers,
       });
     });
 
     return result;
-  }, [filteredOperations]);
+  }, [filteredOperations, filteredTransfers]);
+
 
   // Expense Categories Breakdown
   const expenseCategories: CategoryBreakdownItem[] = useMemo(() => {
@@ -378,7 +417,7 @@ export function Dashboard() {
       )}
 
       {/* KPI Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {/* Total Income */}
         <div className="bg-mono-50 border border-mono-200 rounded-none p-5 shadow-xs flex flex-col justify-between transition-all hover:border-mono-300">
           <div className="flex items-center justify-between">
@@ -480,6 +519,25 @@ export function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* Internal Transfers (Внутренние переводы) */}
+        <div className="bg-mono-50 border border-mono-200 rounded-none p-5 shadow-xs flex flex-col justify-between transition-all hover:border-mono-300">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-mono-500">Внутренние переводы</span>
+            <div className="w-8 h-8 rounded-none bg-mono-200 text-mono-700 flex items-center justify-center">
+              <ArrowLeftRight className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="text-2xl font-bold font-mono text-mono-900 tracking-tight whitespace-nowrap">
+              {formatCurrency(totalTransfers)}
+            </div>
+            <div className="flex items-center justify-between mt-2 text-[11px] font-mono text-mono-400 gap-1">
+              <span>{transfersCount} перевода(ов)</span>
+              <span className="text-[10px] text-mono-400">не влияют на сальдо</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Main Charts Grid */}
@@ -496,7 +554,7 @@ export function Dashboard() {
               </p>
             </div>
             <span className="text-xs font-mono text-mono-500 bg-mono-200/60 px-2.5 py-1 rounded-none">
-              {filteredOperations.length} опер.
+              {filteredOperations.length} опер.{transfersCount > 0 ? ` • ${transfersCount} перев.` : ''}
             </span>
           </div>
 

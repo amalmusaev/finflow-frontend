@@ -299,7 +299,7 @@ export function Settings() {
                   <button
                     type="button"
                     onClick={() => setCategoryType('expense')}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded transition-colors ${
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-none transition-colors ${
                       categoryType === 'expense'
                         ? 'bg-mono-50 text-mono-900 '
                         : 'text-mono-500 hover:text-mono-800'
@@ -310,7 +310,7 @@ export function Settings() {
                   <button
                     type="button"
                     onClick={() => setCategoryType('income')}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded transition-colors ${
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-none transition-colors ${
                       categoryType === 'income'
                         ? 'bg-mono-50 text-mono-900 '
                         : 'text-mono-500 hover:text-mono-800'

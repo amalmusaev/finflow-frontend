@@ -1,9 +1,10 @@
-import type { Account, Category, Operation } from '../types';
+import type { Account, Category, Operation, Transfer } from '../types';
 import { accounts as initialAccounts, categories as initialCategories, transactions as initialTransactions } from '../../lib/mockData';
 
 const MOCK_ACCOUNTS_KEY = 'finflow_mock_accounts_v2';
 const MOCK_CATEGORIES_KEY = 'finflow_mock_categories_v2';
 const MOCK_OPERATIONS_KEY = 'finflow_mock_operations_v2';
+const MOCK_TRANSFERS_KEY = 'finflow_mock_transfers_v2';
 
 export function getMockAccounts(): Account[] {
   try {
@@ -85,4 +86,47 @@ export function saveMockOperations(operations: Operation[]): void {
   localStorage.setItem(MOCK_OPERATIONS_KEY, JSON.stringify(operations));
 }
 
+export function getMockTransfers(): Transfer[] {
+  try {
+    const data = localStorage.getItem(MOCK_TRANSFERS_KEY);
+    if (data) {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {
+    // fallback
+  }
+
+  // Initial seed transfers
+  const seeded: Transfer[] = [
+    {
+      id: 'mock-transfer-1',
+      from_account_id: '3', // Сбербанк Зарплатный
+      to_account_id: '2',   // Tinkoff Black
+      amount: '50000.00',
+      to_amount: '50000.00',
+      fee: '0.00',
+      date: '2026-08-06',
+      description: 'Пополнение карты Tinkoff с зарплатного счета',
+    },
+    {
+      id: 'mock-transfer-2',
+      from_account_id: '2', // Tinkoff Black
+      to_account_id: '1',   // Наличные
+      amount: '10000.00',
+      to_amount: '10000.00',
+      fee: '0.00',
+      date: '2026-08-11',
+      description: 'Снятие наличных в банкомате',
+    },
+  ];
+  saveMockTransfers(seeded);
+  return seeded;
+}
+
+export function saveMockTransfers(transfers: Transfer[]): void {
+  localStorage.setItem(MOCK_TRANSFERS_KEY, JSON.stringify(transfers));
+}
+
 export const delay = (ms = 60) => new Promise((resolve) => setTimeout(resolve, ms));
+
