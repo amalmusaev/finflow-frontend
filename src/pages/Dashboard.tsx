@@ -58,9 +58,35 @@ export function Dashboard() {
       setIsLoading(true);
       setError(null);
 
+      // Ограничиваем выборку текущим периодом + предыдущим для сравнительного анализа
+      let queryFromDate: string | undefined = undefined;
+      let queryToDate: string | undefined = dateRange.endDate || undefined;
+
+      if (dateRange.startDate && dateRange.endDate) {
+        const start = new Date(dateRange.startDate);
+        const end = new Date(dateRange.endDate);
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+        const prevEnd = new Date(start);
+        prevEnd.setDate(prevEnd.getDate() - 1);
+        const prevStart = new Date(prevEnd);
+        prevStart.setDate(prevStart.getDate() - diffDays + 1);
+
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const formatYMD = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        queryFromDate = formatYMD(prevStart);
+      }
+
       const [opsRes, trsRes, accsRes, catsRes] = await Promise.all([
-        api.operations.getAllOperations(),
-        api.transfers.getAllTransfers(),
+        api.operations.getAllOperations({
+          from_date: queryFromDate,
+          to_date: queryToDate,
+        }),
+        api.transfers.getAllTransfers({
+          from_date: queryFromDate,
+          to_date: queryToDate,
+        }),
         api.accounts.getAccounts(),
         api.categories.getCategories(),
       ]);
@@ -70,11 +96,11 @@ export function Dashboard() {
       setAccounts(accsRes.accounts || []);
       setCategories(catsRes.categories || []);
     } catch (err: any) {
-      setError(err.message || 'Ошибка загрузки данных аналитики');
+      setError(err.message || 'Ошибка загрузки данных');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [dateRange.startDate, dateRange.endDate]);
 
 
   useEffect(() => {
